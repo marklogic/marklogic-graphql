@@ -1,0 +1,55 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "com.marklogic:marklogic-unit-test-client:1.0.beta"
+    }
+}
+
+plugins {
+    id "com.marklogic.ml-gradle" version "4.3.2"
+    id "com.github.node-gradle.node" version "3.1.1"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    mlBundle "com.marklogic:marklogic-unit-test-modules:1.1.0"
+}
+
+def nodeModulesDir = "${project.projectDir}/src/main/ml-modules/node_modules"
+
+task clearNodeModules() {
+    doLast {
+        delete fileTree("${nodeModulesDir}").visit { FileVisitDetails details ->
+            delete details.file
+        }
+    }
+}
+
+task createNodeModulesDirectory(dependsOn: clearNodeModules) {
+    doLast {
+        project.mkdir "${nodeModulesDir}"
+    }
+}
+
+task npmInstallGraphQl(type: NpmTask, dependsOn: createNodeModulesDirectory) {
+    workingDir = file("${nodeModulesDir}")
+    args = ['install', 'graphql', '--save-dev']
+}
+
+// Needs to be prepended to graphql/jsutils/instanceOf.js
+def processString = "const process = { env: { NODE_ENV: 'development' } };"
+def fromString = "'use strict';\n\n"
+def toString = "'use strict';\n" + processString + "\n\n"
+task fixInstanceOfJs(dependsOn: npmInstallGraphQl) {
+    doLast {
+        def nodeFile = "${nodeModulesDir}/graphql/jsutils/instanceOf.js"
+        def updatedContent = new File(nodeFile).getText('UTF-8').replaceAll(fromString, toString)
+        new File(nodeFile).write(updatedContent, 'UTF-8')
+    }
+}
+mlLoadModules.dependsOn(fixInstanceOfJs)

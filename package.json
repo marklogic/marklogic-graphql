@@ -1,0 +1,10 @@
+{
+  "name": "load-graphql-into-marklogic",
+  "version": "1.0.0",
+  "description": "This is actually a Gradle project. This is used to load the NodeJs Graphql module into the project.",
+  "dependencies": {},
+  "keywords": [],
+  "devDependencies": {
+    "graphql": "^16.2.0"
+  }
+}
