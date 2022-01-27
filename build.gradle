@@ -53,3 +53,4 @@ task fixInstanceOfJs(dependsOn: npmInstallGraphQl) {
     }
 }
 mlLoadModules.dependsOn(fixInstanceOfJs)
+mlUnitTest.dependsOn(mlLoadModules)

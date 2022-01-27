@@ -76,11 +76,14 @@ function callGraphQlParse(graphQlQueryStr) {
             console.log("Entering a Field, key=" + key + ", depth=" + depth);
             if ((key === 0) && lookingForViewName) {
                 const viewName = node.name.value;
-                opticAstString += "op.fromView(null, " + viewName + ")";
+                opticAstString += "op.fromView(null, '" + viewName + "')";
                 lookingForViewName = false;
 
                 if (node.arguments.length > 0) {
                     console.log("FOUND ARGUMENTS FOR THE QUERY");
+                    const argumentName = node.arguments[0].name.value;
+                    const argumentValue = node.arguments[0].value.value;
+                    opticAstString += ".where(op.eq(op.col('" + argumentName + "'), '" + argumentValue + "'))";
                 }
             }
         },
