@@ -1,9 +1,24 @@
+// import opdsl from '/MarkLogic/optic/optic-dsl-js.mjs';
+// const opdsl = require('/MarkLogic/optic/optic-dsl-js.mjs');
+
 const {parse} = require('/graphql/language/parser');
 const { visit } = require('/graphql/language/visitor');
 const { print } = require('/graphql/language/printer');
 
 function callGraphQlParse(graphQlQueryStr) {
-    const queryDocumentAst = parse(graphQlQueryStr);
+    let queryDocumentAst = null;
+    try {
+        queryDocumentAst = parse(graphQlQueryStr);
+    } catch (error) {
+        const errorMessage = "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
+        console.error(errorMessage);
+        return {
+            graphqlQuery : graphQlQueryStr,
+            opticDsl : null,
+            data : null,
+            errors: [errorMessage]
+        }
+    }
     console.log("Begin AST");
     console.log(queryDocumentAst);
     console.log("End AST");
@@ -140,7 +155,11 @@ function callGraphQlParse(graphQlQueryStr) {
     }
     visit(queryDocumentAst, nodeTypeVisitors);
 
-    return opticAstString;
+    return {
+        graphqlQuery : graphQlQueryStr,
+        opticDsl : opticAstString,
+        data : null
+    }
 }
 
 exports.callGraphQlParse = callGraphQlParse;
