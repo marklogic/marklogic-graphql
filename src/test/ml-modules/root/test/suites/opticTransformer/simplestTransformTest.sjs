@@ -1,6 +1,5 @@
 'use strict';
 
-const op = require('/MarkLogic/optic');
 const test = require("/test/test-helper.xqy");
 const {callGraphQlParse} = require('/mlGraphqlLib');
 const assertions = [];

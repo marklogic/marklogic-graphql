@@ -1,7 +1,8 @@
-// import opdsl from '/MarkLogic/optic/optic-dsl-js.mjs';
-// const opdsl = require('/MarkLogic/optic/optic-dsl-js.mjs');
+// An internal GraphQL module (specifically /jsutils/instanceOf.*)
+// is expecting a value for process.env.NODE_ENV
+this.process = { env: { NODE_ENV: 'development'} };
 
-const {parse} = require('/graphql/language/parser');
+const { parse } = require('/graphql/language/parser');
 const { visit } = require('/graphql/language/visitor');
 const { print } = require('/graphql/language/printer');
 

@@ -41,16 +41,5 @@ task npmInstallGraphQl(type: NpmTask, dependsOn: createNodeModulesDirectory) {
     args = ['install', 'graphql', '--save-dev']
 }
 
-// Needs to be prepended to graphql/jsutils/instanceOf.js
-def processString = "const process = { env: { NODE_ENV: 'development' } };"
-def fromString = "'use strict';\n\n"
-def toString = "'use strict';\n" + processString + "\n\n"
-task fixInstanceOfJs(dependsOn: npmInstallGraphQl) {
-    doLast {
-        def nodeFile = "${nodeModulesDir}/graphql/jsutils/instanceOf.js"
-        def updatedContent = new File(nodeFile).getText('UTF-8').replaceAll(fromString, toString)
-        new File(nodeFile).write(updatedContent, 'UTF-8')
-    }
-}
-mlLoadModules.dependsOn(fixInstanceOfJs)
+mlLoadModules.dependsOn(npmInstallGraphQl)
 mlUnitTest.dependsOn(mlLoadModules)
