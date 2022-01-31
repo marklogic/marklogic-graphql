@@ -30,13 +30,13 @@ function callGraphQlParse(graphQlQueryStr) {
     let expectingAQuery = false;
     let inAQuery = false;
     let currentQueryName = null;
-    let opticAstString = "";
     let lookingForViewName = false;
 
     const documentVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
             console.log("Entering a Document, depth=" + depth);
+            return visit(node.definitions[0], nodeTypeVisitors);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
@@ -51,11 +51,50 @@ function callGraphQlParse(graphQlQueryStr) {
             if (node.operation === "query") {
                 expectingAQuery = true;
                 console.log("OperationDefinition is for a query");
+                const viewName = node.selectionSet.selections[0].name.value;
+                const viewAst = {"ns":"op", "fn":"from-view", "args":[null, viewName, null, null]}
+                console.log("viewAst: " + JSON.stringify(viewAst));
+                const queryAstArguments = [viewAst];
+
+                const numArguments = node.selectionSet.selections[0].arguments.length;
+                for (let i = 0; i < numArguments; i++) {
+                    const argumentName = node.selectionSet.selections[0].arguments[i].name.value;
+                    const argumentValue = node.selectionSet.selections[0].arguments[i].value.value;
+                    const argumentAst = {
+                        "ns":"op",
+                        "fn":"where",
+                        "args":[{
+                            "ns":"op",
+                            "fn":"eq",
+                            "args":[
+                                {
+                                    "ns":"op",
+                                    "fn":"col",
+                                    "args":[argumentName]
+                                },
+                                argumentValue
+                            ]
+                        }]
+                    }
+                    queryAstArguments.push(argumentAst);
+                }
+
+                const queryAst = {
+                    "$optic": {
+                        "ns":"op",
+                        "fn": "operators",
+                        "args": queryAstArguments
+                    }
+                }
+                return queryAst;
             }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
             console.log("Exiting a OperationDefinition, depth=" + depth);
+            if (node.operation === "query") {
+                console.log("Rewriting OperationDefinition node");
+            }
         }
     }
 
@@ -63,7 +102,7 @@ function callGraphQlParse(graphQlQueryStr) {
         enter(node, key, parent, path, ancestors) {
             depth++;
             console.log("Entering a SelectionSet, depth=" + depth);
-            if ((parent.kind === "OperationDefinition") && expectingAQuery) {
+            if ((parent) && (parent.kind === "OperationDefinition") && expectingAQuery) {
                 inAQuery = true;
                 lookingForViewName = true;
                 console.log("SelectionSet is starting query");
@@ -92,14 +131,12 @@ function callGraphQlParse(graphQlQueryStr) {
             console.log("Entering a Field, key=" + key + ", depth=" + depth);
             if ((key === 0) && lookingForViewName) {
                 const viewName = node.name.value;
-                opticAstString += "op.fromView(null, '" + viewName + "')";
                 lookingForViewName = false;
 
                 if (node.arguments.length > 0) {
                     console.log("FOUND ARGUMENTS FOR THE QUERY");
                     const argumentName = node.arguments[0].name.value;
                     const argumentValue = node.arguments[0].value.value;
-                    opticAstString += ".where(op.eq(op.col('" + argumentName + "'), '" + argumentValue + "'))";
                 }
             }
         },
@@ -151,14 +188,14 @@ function callGraphQlParse(graphQlQueryStr) {
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting unhandled node, key: " + key + ", depth=" + depth);
+            // console.log("Exiting unhandled node, key: " + key + ", depth=" + depth);
         }
     }
-    visit(queryDocumentAst, nodeTypeVisitors);
+    const opticAst = visit(queryDocumentAst, nodeTypeVisitors);
 
     return {
         graphqlQuery : graphQlQueryStr,
-        opticDsl : opticAstString,
+        opticAst : JSON.stringify(opticAst),
         data : null
     }
 }

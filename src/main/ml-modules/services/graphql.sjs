@@ -28,7 +28,7 @@ function post(context, params, graphQlQueryStr) {
 
     const parseResult = callGraphQlParse(graphQlQueryStr.toString());
 
-    xdmp.log("parseResult=>\n" + parseResult);
+    xdmp.log("parseResult=>\n" + JSON.stringify(parseResult.opticAst) + "\nEnd Results");
 
     context.outputTypes = [];
     context.outputTypes.push('application/json');
