@@ -215,7 +215,7 @@ function callGraphQlParse(graphQlQueryStr) {
 
     return {
         graphqlQuery : graphQlQueryStr,
-        opticAst : JSON.stringify(opticAst),
+        opticAst : opticAst,
         data : null
     }
 }

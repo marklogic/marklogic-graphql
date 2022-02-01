@@ -13,7 +13,7 @@ const response = callGraphQlParse(simpleGraphQlWithArgumentQueryString);
 console.log("expectedOpticQueryString:\n" + expectedOpticAst);
 console.log("opticAst:\n" + response.opticAst);
 assertions.push(
-    test.assertEqual(expectedOpticAst, response.opticAst)
+    test.assertEqual(expectedOpticAst, JSON.stringify(response.opticAst))
 )
 
 // const opticRequire = "const op = require('/MarkLogic/optic'); ";
