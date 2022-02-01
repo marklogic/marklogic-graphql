@@ -25,16 +25,22 @@ function get(context, params) {
 
 function post(context, params, graphQlQueryStr) {
     xdmp.log('graphQlQueryStr=>\n' + graphQlQueryStr);
+    xdmp.log('input types=>\n' + context.inputTypes);
 
-    const parseResult = callGraphQlParse(graphQlQueryStr.toString());
+    if (context.inputTypes[0] === "application/graphql") {
+        const parseResult = callGraphQlParse(graphQlQueryStr.toString());
+        xdmp.log("parseResult=>\n" + JSON.stringify(parseResult.opticAst) + "\nEnd Results");
 
-    xdmp.log("parseResult=>\n" + JSON.stringify(parseResult.opticAst) + "\nEnd Results");
-
-    context.outputTypes = [];
-    context.outputTypes.push('application/json');
-    context.outputStatus = [201, 'Parsing incomplete'];
-    context.outputHeaders = {'X-My-Header1' : 42, 'X-My-Header2': 'h2val' };
-    return parseResult;
+        context.outputTypes = [];
+        context.outputTypes.push('application/json');
+        context.outputStatus = [201, 'Parsing incomplete'];
+        return parseResult;
+    } else {
+        context.outputTypes = [];
+        context.outputTypes.push('application/json');
+        context.outputStatus = [415, 'Only GraphQL queries are processed here.'];
+        return {};
+    }
 };
 
 function put(context, params, input) {
