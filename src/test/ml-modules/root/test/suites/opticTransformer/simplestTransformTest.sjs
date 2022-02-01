@@ -8,7 +8,7 @@ const assertions = [];
 // Given a query with the query keyword and query name
 let simpleGraphQlQueryString = `query someQuery { Humans { name height } }`;
 //const expectedOpticQueryString = "op.fromView(null, 'Humans')";
-const expectedOpticAst = `{"$optic":{"ns":"op","fn":"operators","args":[{"ns":"op","fn":"from-view","args":[null,"Humans",null,null]}]}}`
+const expectedOpticAst = `{"$optic":{"ns":"op","fn":"operators","args":[{"ns":"op","fn":"from-view","args":[null,"Humans",null,null]},{"ns":"op","fn":"select","args":[[{"ns":"op","fn":"col","args":["name"]},{"ns":"op","fn":"col","args":["height"]}],null]}]}}`
 
 // When the parse is called
 let response = callGraphQlParse(simpleGraphQlQueryString);
@@ -18,11 +18,17 @@ assertions.push(
     test.assertEqual(expectedOpticAst, response.opticAst,
         "The resulting Optic DSL does not match the expected Optic DSL")
 )
-// const opticRequire = "const op = require('/MarkLogic/optic'); ";
-// const opExpectedResult = xdmp.eval(opticRequire + expectedOpticQueryString + `.select(['id', 'name', 'height']).result()`);
-// console.log("Expected Result=>\n"+opExpectedResult);
-// const opActualResult = xdmp.eval(opticRequire + response.opticDsl + `.select(['id', 'name', 'height']).result()`);
-// console.log("Actual Result=>\n" + opActualResult);
+const opPrefix = "const op = require('/MarkLogic/optic'); op.import(";
+const opExpectedCommand = opPrefix + expectedOpticAst + ").result();"
+console.log("opExpectedCommand:\n"+opExpectedCommand);
+const opExpectedResult = xdmp.eval(opExpectedCommand);
+console.log("Expected Result=>\n"+opExpectedResult);
+const opActualCommand = opPrefix + response.opticAst + ").result();"
+console.log("opActualCommand:\n"+opActualCommand);
+const opActualResult = xdmp.eval(opActualCommand);
+console.log("Actual Result=>\n" + opActualResult);
+
+
 
 // Test #2
 // Given a query without the query keyword and query name

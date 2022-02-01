@@ -56,11 +56,31 @@ function callGraphQlParse(graphQlQueryStr) {
                 console.log("viewAst: " + JSON.stringify(viewAst));
                 const queryAstArguments = [viewAst];
 
+                const columnAstArguments = [];
+                const numFields = node.selectionSet.selections[0].selectionSet.selections.length;
+                for (let i = 0; i < numFields; i++) {
+                    const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
+                    columnAstArguments.push({
+                        "ns":"op",
+                        "fn":"col",
+                        "args":[columnName]
+                    })
+                }
+                const selectAst = {
+                    "ns":"op",
+                    "fn":"select",
+                    "args":[
+                        columnAstArguments,
+                        null
+                    ]
+                }
+                queryAstArguments.push(selectAst);
+
                 const numArguments = node.selectionSet.selections[0].arguments.length;
                 for (let i = 0; i < numArguments; i++) {
                     const argumentName = node.selectionSet.selections[0].arguments[i].name.value;
                     const argumentValue = node.selectionSet.selections[0].arguments[i].value.value;
-                    const argumentAst = {
+                    const whereAst = {
                         "ns":"op",
                         "fn":"where",
                         "args":[{
@@ -76,7 +96,7 @@ function callGraphQlParse(graphQlQueryStr) {
                             ]
                         }]
                     }
-                    queryAstArguments.push(argumentAst);
+                    queryAstArguments.push(whereAst);
                 }
 
                 const queryAst = {
