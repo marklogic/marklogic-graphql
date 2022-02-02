@@ -1,4 +1,5 @@
-const {callGraphQlParse} = require('/mlGraphqlLib');
+//const {callGraphQlParse} = require('/mlGraphqlLib');
+const {callGraphQlParse} = require('/mlGraphqlLibOpticApi');
 
 function get(context, params) {
     const results = [];
@@ -29,7 +30,6 @@ function post(context, params, graphQlQueryStr) {
 
     if (context.inputTypes[0] === "application/graphql") {
         const parseResult = callGraphQlParse(graphQlQueryStr.toString());
-        xdmp.log("parseResult=>\n" + JSON.stringify(parseResult.opticAst) + "\nEnd Results");
 
         context.outputTypes = [];
         context.outputTypes.push('application/json');
