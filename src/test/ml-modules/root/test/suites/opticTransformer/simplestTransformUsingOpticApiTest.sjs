@@ -16,9 +16,14 @@ let simpleGraphQlQueryString = `query someQuery { Humans { name height } }`;
 // When the parse is called
 let response = callGraphQlParse(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
+console.log("expectedOpticQueryString:\n" + JSON.stringify(expectedOpticAst));
+console.log("opticAst:\n" + JSON.stringify(response.opticAst));
+console.log("opticPlan:\n" + JSON.stringify(response.opticPlan));
 assertions.push(
     test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
-        "The resulting Optic DSL does not match the expected Optic DSL")
+        "The resulting Optic DSL does not match the expected Optic DSL"),
+    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticPlan),
+        "The resulting Optic Plan does not match the expected Optic Plan")
 )
 
 assertions

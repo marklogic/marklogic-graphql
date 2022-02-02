@@ -1,6 +1,5 @@
 // This file would be ran multiple times, once before each test is ran
 declareUpdate();
-console.log("suiteSetup");
 
 const test = require("/test/test-helper.xqy");
 

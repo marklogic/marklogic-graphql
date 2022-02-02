@@ -6,6 +6,8 @@ const { parse } = require('/graphql/language/parser');
 const { visit } = require('/graphql/language/visitor');
 const { print } = require('/graphql/language/printer');
 
+const graphqlTraceEvent = "GRAPHQL";
+
 function callGraphQlParse(graphQlQueryStr) {
     let queryDocumentAst = null;
     try {
@@ -20,11 +22,7 @@ function callGraphQlParse(graphQlQueryStr) {
             errors: [errorMessage]
         }
     }
-    console.log("Begin AST");
-    console.log(queryDocumentAst);
-    console.log("End AST");
-    console.log(print(queryDocumentAst));
-    console.log("Post AST");
+    fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
 
     let depth = 0;
     let expectingAQuery = false;
@@ -35,25 +33,21 @@ function callGraphQlParse(graphQlQueryStr) {
     const documentVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Document, depth=" + depth);
             return visit(node.definitions[0], nodeTypeVisitors);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Document, depth=" + depth);
         }
     }
 
     const operationDefinitionVisitor =  {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a OperationDefinition, depth=" + depth);
             if (node.operation === "query") {
                 expectingAQuery = true;
-                console.log("OperationDefinition is for a query");
+                fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
                 const viewName = node.selectionSet.selections[0].name.value;
                 const viewAst = {"ns":"op", "fn":"from-view", "args":[null, viewName, null, null]}
-                console.log("viewAst: " + JSON.stringify(viewAst));
                 const queryAstArguments = [viewAst];
 
                 const columnAstArguments = [];
@@ -111,17 +105,12 @@ function callGraphQlParse(graphQlQueryStr) {
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a OperationDefinition, depth=" + depth);
-            if (node.operation === "query") {
-                console.log("Rewriting OperationDefinition node");
-            }
         }
     }
 
     const selectionSetVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a SelectionSet, depth=" + depth);
             if ((parent) && (parent.kind === "OperationDefinition") && expectingAQuery) {
                 inAQuery = true;
                 lookingForViewName = true;
@@ -130,31 +119,26 @@ function callGraphQlParse(graphQlQueryStr) {
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a SelectionSet, depth=" + depth);
         }
     }
 
     const argumentVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Argument, depth=" + depth);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Argument, depth=" + depth);
         }
     }
 
     const fieldVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Field, key=" + key + ", depth=" + depth);
             if ((key === 0) && lookingForViewName) {
                 const viewName = node.name.value;
                 lookingForViewName = false;
 
                 if (node.arguments.length > 0) {
-                    console.log("FOUND ARGUMENTS FOR THE QUERY");
                     const argumentName = node.arguments[0].name.value;
                     const argumentValue = node.arguments[0].value.value;
                 }
@@ -162,33 +146,27 @@ function callGraphQlParse(graphQlQueryStr) {
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Field, key=" + key + ", depth=" + depth);
         }
     }
 
     const nameVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Name, depth=" + depth);
             if ((parent.kind === "OperationDefinition") && expectingAQuery) {
                 currentQueryName = node.value;
-                console.log("currentQueryName = " + currentQueryName);
             }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Name, depth=" + depth);
         }
     }
 
     const stringValueVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a StringValueVisitor, depth=" + depth);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a StringValueVisitor, depth=" + depth);
         }
     }
 
@@ -203,19 +181,18 @@ function callGraphQlParse(graphQlQueryStr) {
 
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering unhandled node, key: " + key + ", depth=" + depth);
-            console.log(node);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            // console.log("Exiting unhandled node, key: " + key + ", depth=" + depth);
         }
     }
     const opticAst = visit(queryDocumentAst, nodeTypeVisitors);
+    fn.trace("transformToJsonAst=>\n" + JSON.stringify(opticAst) + "\nEnd transformToJsonAst",graphqlTraceEvent);
 
     return {
         graphqlQuery : graphQlQueryStr,
         opticAst : opticAst,
+        opticPlan : null,
         data : null
     }
 }

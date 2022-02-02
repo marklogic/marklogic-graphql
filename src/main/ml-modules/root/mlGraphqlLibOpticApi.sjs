@@ -7,13 +7,14 @@ const { visit } = require('/graphql/language/visitor');
 const { print } = require('/graphql/language/printer');
 const op = require('/MarkLogic/optic');
 
+const graphqlTraceEvent = "GRAPHQL";
+
 function callGraphQlParse(graphQlQueryStr) {
     let queryDocumentAst = null;
     try {
         queryDocumentAst = parse(graphQlQueryStr);
     } catch (error) {
         const errorMessage = "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
-        console.error(JSON.stringify(error));
         console.error(errorMessage);
         return {
             graphqlQuery : graphQlQueryStr,
@@ -22,11 +23,7 @@ function callGraphQlParse(graphQlQueryStr) {
             errors: [errorMessage]
         }
     }
-    console.log("Begin AST");
-    console.log(queryDocumentAst);
-    console.log("End AST");
-    console.log(print(queryDocumentAst));
-    console.log("Post AST");
+    fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
 
     let depth = 0;
     let expectingAQuery = false;
@@ -38,22 +35,19 @@ function callGraphQlParse(graphQlQueryStr) {
     const documentVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Document, depth=" + depth);
             return visit(node.definitions[0], nodeTypeVisitors);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Document, depth=" + depth);
         }
     }
 
     const operationDefinitionVisitor =  {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a OperationDefinition, depth=" + depth);
             if (node.operation === "query") {
                 expectingAQuery = true;
-                console.log("OperationDefinition is for a query");
+                fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
                 const viewName = node.selectionSet.selections[0].name.value;
                 const viewAst = {"ns":"op", "fn":"from-view", "args":[null, viewName, null, null]}
                 const queryAstArguments = [viewAst];
@@ -79,7 +73,6 @@ function callGraphQlParse(graphQlQueryStr) {
                             ]
                         }]
                     }
-                    console.log("whereAst: " + JSON.stringify(whereAst));
                     queryAstArguments.push(whereAst);
                     opticPlan = opticPlan.where(op.eq(op.col(argumentName), argumentValue));
                 }
@@ -119,50 +112,39 @@ function callGraphQlParse(graphQlQueryStr) {
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a OperationDefinition, depth=" + depth);
-            if (node.operation === "query") {
-                console.log("Rewriting OperationDefinition node");
-            }
         }
     }
 
     const selectionSetVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a SelectionSet, depth=" + depth);
             if ((parent) && (parent.kind === "OperationDefinition") && expectingAQuery) {
                 inAQuery = true;
                 lookingForViewName = true;
-                console.log("SelectionSet is starting query");
             }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a SelectionSet, depth=" + depth);
         }
     }
 
     const argumentVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Argument, depth=" + depth);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Argument, depth=" + depth);
         }
     }
 
     const fieldVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Field, key=" + key + ", depth=" + depth);
             if ((key === 0) && lookingForViewName) {
                 const viewName = node.name.value;
                 lookingForViewName = false;
 
                 if (node.arguments.length > 0) {
-                    console.log("FOUND ARGUMENTS FOR THE QUERY");
                     const argumentName = node.arguments[0].name.value;
                     const argumentValue = node.arguments[0].value.value;
                 }
@@ -170,33 +152,27 @@ function callGraphQlParse(graphQlQueryStr) {
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Field, key=" + key + ", depth=" + depth);
         }
     }
 
     const nameVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a Name, depth=" + depth);
             if ((parent.kind === "OperationDefinition") && expectingAQuery) {
                 currentQueryName = node.value;
-                console.log("currentQueryName = " + currentQueryName);
             }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a Name, depth=" + depth);
         }
     }
 
     const stringValueVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering a StringValueVisitor, depth=" + depth);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            console.log("Exiting a StringValueVisitor, depth=" + depth);
         }
     }
 
@@ -211,21 +187,18 @@ function callGraphQlParse(graphQlQueryStr) {
 
         enter(node, key, parent, path, ancestors) {
             depth++;
-            console.log("Entering unhandled node, key: " + key + ", depth=" + depth);
-            console.log(node);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
-            // console.log("Exiting unhandled node, key: " + key + ", depth=" + depth);
         }
     }
     const opticAst = visit(queryDocumentAst, nodeTypeVisitors);
-    console.log("transformToJsonAst=>\n" + JSON.stringify(opticAst) + "\nEnd transformToJsonAst");
-    console.log("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan");
+    fn.trace("transformToJsonAst=>\n" + JSON.stringify(opticAst) + "\nEnd transformToJsonAst", graphqlTraceEvent);
+    fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
 
-    console.log("Optic Plan Result");
-    console.log(opticPlan.result());
-    console.log("Optic Plan Result Finished");
+    fn.trace("Optic Plan Result", graphqlTraceEvent);
+    fn.trace(opticPlan.result(), graphqlTraceEvent);
+    fn.trace("Optic Plan Result Finished", graphqlTraceEvent);
 
     return {
         graphqlQuery : graphQlQueryStr,

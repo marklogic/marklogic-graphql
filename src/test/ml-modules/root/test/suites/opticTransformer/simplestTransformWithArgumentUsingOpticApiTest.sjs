@@ -11,9 +11,13 @@ const expectedOpticAst = `{"$optic":{"ns":"op","fn":"operators","args":[{"ns":"o
 
 const response = callGraphQlParse(simpleGraphQlWithArgumentQueryString);
 console.log("expectedOpticQueryString:\n" + expectedOpticAst);
-console.log("opticAst:\n" + response.opticAst);
+console.log("opticAst:\n" + JSON.stringify(response.opticAst));
+console.log("opticPlan:\n" + JSON.stringify(response.opticPlan));
 assertions.push(
-    test.assertEqual(expectedOpticAst, JSON.stringify(response.opticAst))
+    test.assertEqual(expectedOpticAst, JSON.stringify(response.opticAst),
+        "The resulting Optic DSL does not match the expected Optic DSL"),
+    test.assertEqual(expectedOpticAst, JSON.stringify(response.opticPlan),
+        "The resulting Optic Plan does not match the expected Optic Plan")
 )
 
 // const opticRequire = "const op = require('/MarkLogic/optic'); ";
