@@ -18,12 +18,20 @@ let response = callGraphQlParse(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
 console.log("expectedOpticQueryString:\n" + JSON.stringify(expectedOpticAst));
 console.log("opticAst:\n" + JSON.stringify(response.opticAst));
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan));
+console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
 assertions.push(
     test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
         "The resulting Optic DSL does not match the expected Optic DSL"),
-    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticPlan),
+    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticPlan.export()),
         "The resulting Optic Plan does not match the expected Optic Plan")
+)
+// Then the result set of the Optic query is what is expected.
+let opActualResult = response.opticPlan.result();
+let actualResultsArray = [];
+Array.from(opActualResult).forEach(element => actualResultsArray.push(element));
+assertions.push(
+    test.assertEqual(expectedResultsArray, actualResultsArray,
+        "The resulting data set does not match the expected results.")
 )
 
 assertions

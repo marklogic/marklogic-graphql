@@ -203,7 +203,7 @@ function callGraphQlParse(graphQlQueryStr) {
     return {
         graphqlQuery : graphQlQueryStr,
         opticAst : opticAst,
-        opticPlan : opticPlan.export(),
+        opticPlan : opticPlan,
         data : null
     }
 }
