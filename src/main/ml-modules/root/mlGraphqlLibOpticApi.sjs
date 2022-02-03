@@ -10,17 +10,21 @@ const op = require('/MarkLogic/optic');
 const graphqlTraceEvent = "GRAPHQL";
 
 function callGraphQlParse(graphQlQueryStr) {
+    let opticPlan = null;
+    const errors = [];
     let queryDocumentAst = null;
+
     try {
         queryDocumentAst = parse(graphQlQueryStr);
     } catch (error) {
         const errorMessage = "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
         console.error(errorMessage);
+        errors.push(errorMessage);
         return {
             graphqlQuery : graphQlQueryStr,
             opticDsl : null,
             data : null,
-            errors: [errorMessage]
+            errors: errors
         }
     }
     fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
@@ -30,7 +34,6 @@ function callGraphQlParse(graphQlQueryStr) {
     let inAQuery = false;
     let currentQueryName = null;
     let lookingForViewName = false;
-    let opticPlan = null;
 
     const documentVisitor = {
         enter(node, key, parent, path, ancestors) {
@@ -79,7 +82,14 @@ function callGraphQlParse(graphQlQueryStr) {
 
                 const columnAstArguments = [];
                 const columnNames = [];
-                const numFields = node.selectionSet.selections[0].selectionSet.selections.length;
+                // const numFields = node.selectionSet.selections[0].selectionSet.selections.length;
+                let numFields = null;
+                if (node.selectionSet.selections[0].selectionSet) {
+                    numFields = node.selectionSet.selections[0].selectionSet.selections.length;
+                } else {
+                    errors.push("Queries must contain a SelectionSet for each View: \n" + graphQlQueryStr);
+                    return false;
+                }
                 for (let i = 0; i < numFields; i++) {
                     const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
                     columnAstArguments.push({
@@ -204,7 +214,8 @@ function callGraphQlParse(graphQlQueryStr) {
         graphqlQuery : graphQlQueryStr,
         opticAst : opticAst,
         opticPlan : opticPlan,
-        data : null
+        data : null,
+        errors: errors
     }
 }
 

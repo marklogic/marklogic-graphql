@@ -105,4 +105,17 @@ assertions.push(
         "The error message does not match")
 )
 
+
+// Test #5
+// Given a query without the Fields braces
+simpleGraphQlQueryString = `query { Humans }`;
+// When the parse is called
+response = callGraphQlParse(simpleGraphQlQueryString);
+// Then an error is returned
+assertions.push(
+    test.assertEqual(1, response.errors.length, "The GraphQL Query string should have resulted in an error."),
+    test.assertEqual("Queries must contain a SelectionSet for each View: \n" + simpleGraphQlQueryString, response.errors[0],
+        "The error message does not match")
+)
+
 assertions
