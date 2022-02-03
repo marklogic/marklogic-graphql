@@ -13,7 +13,7 @@ The parser used is the parser included in the JavaScript reference implementatio
 3. Deploy the AppServer, REST extension, and code.
 >`./gradlew mlDeploy`
 4. Test the endpoint using curl.
->`curl --digest --user admin:admin -X POST -H "Content-type: application/txt" -d '{ query { user } }' http://localhost:8003/LATEST/resources/graphql`
+>`curl --digest --user admin:admin -X POST -H "Content-type: application/txt" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8003/LATEST/resources/graphql`
 5. Go to http://localhost:8004/test/ and run the tests.
 
 ## Future Work
