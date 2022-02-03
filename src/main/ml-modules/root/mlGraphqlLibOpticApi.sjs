@@ -9,7 +9,7 @@ const op = require('/MarkLogic/optic');
 
 const graphqlTraceEvent = "GRAPHQL";
 
-function callGraphQlParse(graphQlQueryStr) {
+function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     let opticPlan = null;
     const errors = [];
     let queryDocumentAst = null;
@@ -22,7 +22,8 @@ function callGraphQlParse(graphQlQueryStr) {
         errors.push(errorMessage);
         return {
             graphqlQuery : graphQlQueryStr,
-            opticDsl : null,
+            opticAst : null,
+            opticPlan : null,
             data : null,
             errors: errors
         }
@@ -82,12 +83,13 @@ function callGraphQlParse(graphQlQueryStr) {
 
                 const columnAstArguments = [];
                 const columnNames = [];
-                // const numFields = node.selectionSet.selections[0].selectionSet.selections.length;
                 let numFields = null;
                 if (node.selectionSet.selections[0].selectionSet) {
                     numFields = node.selectionSet.selections[0].selectionSet.selections.length;
                 } else {
-                    errors.push("Queries must contain a SelectionSet for each View: \n" + graphQlQueryStr);
+                    const errorMessage = "Queries must contain a SelectionSet for each View: \n" + graphQlQueryStr;
+                    fn.trace(errorMessage, graphqlTraceEvent);
+                    errors.push(errorMessage);
                     return false;
                 }
                 for (let i = 0; i < numFields; i++) {
@@ -206,9 +208,6 @@ function callGraphQlParse(graphQlQueryStr) {
     fn.trace("transformToJsonAst=>\n" + JSON.stringify(opticAst) + "\nEnd transformToJsonAst", graphqlTraceEvent);
     fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
 
-    fn.trace("Optic Plan Result", graphqlTraceEvent);
-    fn.trace(opticPlan.result(), graphqlTraceEvent);
-    fn.trace("Optic Plan Result Finished", graphqlTraceEvent);
 
     return {
         graphqlQuery : graphQlQueryStr,
@@ -219,4 +218,12 @@ function callGraphQlParse(graphQlQueryStr) {
     }
 }
 
-exports.callGraphQlParse = callGraphQlParse;
+function executeOpticPlan(opticPlan) {
+    fn.trace("Optic Plan Result", graphqlTraceEvent);
+    const result = opticPlan.result();
+    fn.trace(result, graphqlTraceEvent);
+    fn.trace("Optic Plan Result Finished", graphqlTraceEvent);
+    return result;
+}
+exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
+exports.executeOpticPlan = executeOpticPlan;

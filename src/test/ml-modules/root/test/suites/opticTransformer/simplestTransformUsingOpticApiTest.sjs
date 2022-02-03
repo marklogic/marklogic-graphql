@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require("/test/test-helper.xqy");
-const {callGraphQlParse} = require('/mlGraphqlLibOpticApi');
+const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLibOpticApi');
 const op = require('/MarkLogic/optic');
 const assertions = [];
 
@@ -14,7 +14,7 @@ Array.from(opExpectedResult).forEach(element => expectedResultsArray.push(elemen
 // Given a query with the query keyword and query name
 let simpleGraphQlQueryString = `query someQuery { Humans { name height } }`;
 // When the parse is called
-let response = callGraphQlParse(simpleGraphQlQueryString);
+let response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
 console.log("expectedOpticQueryString:\n" + JSON.stringify(expectedOpticAst));
 console.log("opticAst:\n" + JSON.stringify(response.opticAst));
@@ -26,7 +26,7 @@ assertions.push(
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.
-let opActualResult = response.opticPlan.result();
+let opActualResult = executeOpticPlan(response.opticPlan);
 let actualResultsArray = [];
 Array.from(opActualResult).forEach(element => actualResultsArray.push(element));
 assertions.push(
@@ -40,7 +40,7 @@ assertions.push(
 // Given a query without the query keyword and query name
 simpleGraphQlQueryString = `{ Humans { name height } }`;
 // When the parse is called
-response = callGraphQlParse(simpleGraphQlQueryString);
+response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
 assertions.push(
     test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
@@ -49,7 +49,7 @@ assertions.push(
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.
-opActualResult = response.opticPlan.result();
+opActualResult = executeOpticPlan(response.opticPlan);
 actualResultsArray = [];
 Array.from(opActualResult).forEach(element => actualResultsArray.push(element));
 assertions.push(
@@ -62,7 +62,7 @@ assertions.push(
 // Given a query without the query name
 simpleGraphQlQueryString = `query { Humans { name height } }`;
 // When the parse is called
-response = callGraphQlParse(simpleGraphQlQueryString);
+response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
 assertions.push(
     test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
@@ -71,7 +71,7 @@ assertions.push(
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.
-opActualResult = response.opticPlan.result();
+opActualResult = executeOpticPlan(response.opticPlan);
 actualResultsArray = [];
 Array.from(opActualResult).forEach(element => actualResultsArray.push(element));
 assertions.push(
@@ -84,7 +84,7 @@ assertions.push(
 // Given a query with a name, without the query keyword
 simpleGraphQlQueryString = `someQuery { Humans { name height } }`;
 // When the parse is called
-response = callGraphQlParse(simpleGraphQlQueryString);
+response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then an error is returned
 assertions.push(
     test.assertEqual(1, response.errors.length, "The GraphQL Query string should have resulted in an error."),
@@ -97,7 +97,7 @@ assertions.push(
 // Given a query without Fields
 simpleGraphQlQueryString = `query { Humans { } }`;
 // When the parse is called
-response = callGraphQlParse(simpleGraphQlQueryString);
+response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then an error is returned
 assertions.push(
     test.assertEqual(1, response.errors.length, "The GraphQL Query string should have resulted in an error."),
@@ -110,7 +110,7 @@ assertions.push(
 // Given a query without the Fields braces
 simpleGraphQlQueryString = `query { Humans }`;
 // When the parse is called
-response = callGraphQlParse(simpleGraphQlQueryString);
+response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then an error is returned
 assertions.push(
     test.assertEqual(1, response.errors.length, "The GraphQL Query string should have resulted in an error."),

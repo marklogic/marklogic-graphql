@@ -2,7 +2,7 @@
 
 const op = require('/MarkLogic/optic');
 const test = require("/test/test-helper.xqy");
-const {callGraphQlParse} = require('/mlGraphqlLibOpticApi');
+const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLibOpticApi');
 const assertions = [];
 
 const simpleGraphQlWithArgumentQueryString = `query someQuery { Humans (id: "1000") { name height } }`;
@@ -12,7 +12,7 @@ let opExpectedResult = op.import(expectedOpticAst).result();
 const expectedResultsArray = [];
 Array.from(opExpectedResult).forEach(element => expectedResultsArray.push(element));
 
-const response = callGraphQlParse(simpleGraphQlWithArgumentQueryString);
+const response = transformGraphqlIntoOpticPlan(simpleGraphQlWithArgumentQueryString);
 console.log("expectedOpticQueryString:\n" + expectedOpticAst);
 console.log("opticAst:\n" + JSON.stringify(response.opticAst));
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
@@ -23,7 +23,7 @@ assertions.push(
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.
-let opActualResult = response.opticPlan.result();
+let opActualResult = executeOpticPlan(response.opticPlan);
 let actualResultsArray = [];
 Array.from(opActualResult).forEach(element => actualResultsArray.push(element));
 assertions.push(
