@@ -94,12 +94,18 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                 }
                 for (let i = 0; i < numFields; i++) {
                     const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
-                    columnAstArguments.push({
-                        "ns":"op",
-                        "fn":"col",
-                        "args":[columnName]
-                    })
-                    columnNames.push(columnName);
+                    if (node.selectionSet.selections[0].selectionSet.selections[i].selectionSet) {
+                        const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
+                        const toColumnName = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet.selections[0].name.value;
+                        console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
+                    } else {
+                        columnAstArguments.push({
+                            "ns":"op",
+                            "fn":"col",
+                            "args":[columnName]
+                        })
+                        columnNames.push(op.prop(columnName, op.col(columnName)));
+                    }
                 }
                 const selectAst = {
                     "ns":"op",
@@ -110,7 +116,17 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                     ]
                 }
                 queryAstArguments.push(selectAst);
-                opticPlan = opticPlan.select(columnNames);
+                // opticPlan = opticPlan.select(columnNames);
+                opticPlan = opticPlan.select(
+                    op.as(
+                        viewName,
+                        op.jsonObject([
+                            op.prop('id', op.col('id')),
+                            op.prop('name', op.col('name'))
+                        ])
+                    )
+                )
+                opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
 
                 const queryAst = {
                     "$optic": {
@@ -219,11 +235,40 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
 }
 
 function executeOpticPlan(opticPlan) {
-    fn.trace("Optic Plan Result", graphqlTraceEvent);
-    const result = opticPlan.result();
-    fn.trace(result, graphqlTraceEvent);
-    fn.trace("Optic Plan Result Finished", graphqlTraceEvent);
-    return result;
+    const planObj = opticPlan.export();
+    fn.trace("Plan Export\n" + op.toSource(planObj), graphqlTraceEvent);
+
+    let result = opticPlan.result();
+    fn.trace("Optic Plan Result\n" + result + "Optic Plan Result Finished", graphqlTraceEvent);
+
+    const nb = new NodeBuilder();
+    nb.addNode({ "data": result });
+    return nb.toNode();
 }
+
+function deepEqual(object1, object2) {
+    const keys1 = Object.keys(object1);
+    const keys2 = Object.keys(object2);
+    if (keys1.length !== keys2.length) {
+        return false;
+    }
+    for (const key of keys1) {
+        const val1 = object1[key];
+        const val2 = object2[key];
+        const areObjects = isObject(val1) && isObject(val2);
+        if (
+            areObjects && !deepEqual(val1, val2) ||
+            !areObjects && val1 !== val2
+        ) {
+            return false;
+        }
+    }
+    return true;
+}
+function isObject(object) {
+    return object != null && typeof object === 'object';
+}
+
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
 exports.executeOpticPlan = executeOpticPlan;
+exports.deepEqual = deepEqual;
