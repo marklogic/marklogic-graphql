@@ -53,35 +53,15 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                 expectingAQuery = true;
                 fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
                 const viewName = node.selectionSet.selections[0].name.value;
-                const viewAst = {"ns":"op", "fn":"from-view", "args":[null, viewName, null, null]}
-                const queryAstArguments = [viewAst];
                 opticPlan = op.fromView(null, viewName);
 
                 const numArguments = node.selectionSet.selections[0].arguments.length;
                 for (let i = 0; i < numArguments; i++) {
                     const argumentName = node.selectionSet.selections[0].arguments[i].name.value;
                     const argumentValue = node.selectionSet.selections[0].arguments[i].value.value;
-                    const whereAst = {
-                        "ns":"op",
-                        "fn":"where",
-                        "args":[{
-                            "ns":"op",
-                            "fn":"eq",
-                            "args":[
-                                {
-                                    "ns":"op",
-                                    "fn":"col",
-                                    "args":[argumentName]
-                                },
-                                argumentValue
-                            ]
-                        }]
-                    }
-                    queryAstArguments.push(whereAst);
-                    opticPlan = opticPlan.where(op.eq(op.col(argumentName), argumentValue));
+                    opticPlan = opticPlan.where(op.eq(op.viewCol(viewName, argumentName), argumentValue));
                 }
 
-                const columnAstArguments = [];
                 const columnNames = [];
                 let numFields = null;
                 if (node.selectionSet.selections[0].selectionSet) {
@@ -92,38 +72,45 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                     errors.push(errorMessage);
                     return false;
                 }
+                let joinViews = [];
                 for (let i = 0; i < numFields; i++) {
                     const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
                     if (node.selectionSet.selections[0].selectionSet.selections[i].selectionSet) {
                         const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
                         const toColumnName = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet.selections[0].name.value;
                         console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
+                        joinView = op.fromView(null, columnName)
+                            // Select the ID column and create a second column with a constructed JSON object
+                            .select([
+                                op.viewCol(columnName, toColumnName),
+                                op.as(
+                                    'joinView',
+                                    op.jsonObject([
+                                        op.prop('ownerId', op.col('ownerId')),
+                                        op.prop('year', op.col('year')),
+                                        op.prop('model', op.col('model'))
+                                    ])
+                                )
+                            ]);
+                        joinViews.push(joinView);
+                        // opticPlan = opticPlan.joinLeftOuter(
+                        //     joinView,
+                        //     op.on(op.viewCol(viewName, fromColumnName), op.viewCol(columnName, toColumnName))
+                        // ).groupBy(
+                        //     op.viewCol(viewName, fromColumnName),
+                        //     [
+                        //         op.viewCol(viewName,'name'),
+                        //         op.arrayAggregate(columnName,op.col('joinView'))
+                        //     ]
+                        // );
                     } else {
-                        columnAstArguments.push({
-                            "ns":"op",
-                            "fn":"col",
-                            "args":[columnName]
-                        })
-                        columnNames.push(op.prop(columnName, op.col(columnName)));
+                       columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
                     }
                 }
-                const selectAst = {
-                    "ns":"op",
-                    "fn":"select",
-                    "args":[
-                        columnAstArguments,
-                        null
-                    ]
-                }
-                queryAstArguments.push(selectAst);
-                // opticPlan = opticPlan.select(columnNames);
                 opticPlan = opticPlan.select(
                     op.as(
                         viewName,
-                        op.jsonObject([
-                            op.prop('id', op.col('id')),
-                            op.prop('name', op.col('name'))
-                        ])
+                        op.jsonObject(columnNames)
                     )
                 )
                 opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
@@ -136,15 +123,6 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                         ])
                     )
                 )
-
-                const queryAst = {
-                    "$optic": {
-                        "ns":"op",
-                        "fn": "operators",
-                        "args": queryAstArguments
-                    }
-                }
-                return queryAst;
             }
         },
         leave(node, key, parent, path, ancestors) {
