@@ -9,6 +9,33 @@ const op = require('/MarkLogic/optic');
 
 const graphqlTraceEvent = "GRAPHQL";
 
+function processJoin(joinViewName, foreignSelectionSet, fromColumnName) {
+    const toColumnName = foreignSelectionSet.selections[0].name.value;
+    console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
+
+    const foreignFields = [];
+    for (let j = 0; j < foreignSelectionSet.selections.length; j++) {
+        const foreignFieldName = foreignSelectionSet.selections[j].name.value;
+        foreignFields.push(op.prop(foreignFieldName, op.col(foreignFieldName)));
+    }
+    joinView = op.fromView(null, joinViewName)
+        // Select the ID column and create a second column with a constructed JSON object
+        .select([
+            op.viewCol(joinViewName, toColumnName),
+            op.as(
+                joinViewName,
+                op.jsonObject(foreignFields)
+            )
+        ]);
+    const joinViewInfo = {
+        "joinView" : joinView,
+        "joinViewName" : joinViewName,
+        "fromColumnName" : fromColumnName,
+        "toColumnName" : toColumnName
+    }
+    return joinViewInfo;
+}
+
 function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     let opticPlan = null;
     const errors = [];
@@ -72,44 +99,25 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                     errors.push(errorMessage);
                     return false;
                 }
+
+                // Get field information
+                // If the field is a join, dig down.
+                const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
                 for (let i = 0; i < numFields; i++) {
                     const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
                     const foreignSelectionSet = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet
                     if (foreignSelectionSet) {
-                        const joinViewName = columnName;
-                        const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
-                        const toColumnName = foreignSelectionSet.selections[0].name.value;
-                        console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
-
-                        const foreignFields = [];
-                        for (let j = 0; j < foreignSelectionSet.selections.length; j++) {
-                            const foreignFieldName = foreignSelectionSet.selections[j].name.value;
-                            foreignFields.push(op.prop(foreignFieldName, op.col(foreignFieldName)));
-                        }
-                        joinView = op.fromView(null, joinViewName)
-                            // Select the ID column and create a second column with a constructed JSON object
-                            .select([
-                                op.viewCol(joinViewName, toColumnName),
-                                op.as(
-                                    joinViewName,
-                                    op.jsonObject(foreignFields)
-                                )
-                            ]);
-                        const joinViewInfo = {
-                            "joinView" : joinView,
-                            "joinViewName" : joinViewName,
-                            "fromColumnName" : fromColumnName,
-                            "toColumnName" : toColumnName
-                        }
-                        columnNames.push(op.prop(joinViewName, op.col(joinViewName)));
+                        const joinViewInfo = processJoin(columnName, foreignSelectionSet, fromColumnName);
+                        columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
                         joinViews.push(joinViewInfo);
-                        viewColumns.push(op.arrayAggregate(joinViewName,op.col(joinViewName)))
+                        viewColumns.push(op.arrayAggregate(joinViewInfo.joinViewName,op.col(joinViewInfo.joinViewName)))
                     } else {
                         columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
                         viewColumns.push(op.viewCol(viewName,columnName));
                     }
                 }
 
+                // If there are any joins, add them
                 if (joinViews.length > 0) {
                     const currentView = joinViews[0];
                     opticPlan = opticPlan.joinLeftOuter(
@@ -121,6 +129,7 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                     );
                 }
 
+                // Add all the columns to the JSON object built for the view
                 opticPlan = opticPlan.select(
                     op.as(
                         viewName,
