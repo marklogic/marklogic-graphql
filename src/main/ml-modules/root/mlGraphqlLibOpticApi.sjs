@@ -63,6 +63,7 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                 }
 
                 const columnNames = [];
+                let joinViews = [];
                 let numFields = null;
                 if (node.selectionSet.selections[0].selectionSet) {
                     numFields = node.selectionSet.selections[0].selectionSet.selections.length;
@@ -72,19 +73,19 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                     errors.push(errorMessage);
                     return false;
                 }
-                let joinViews = [];
                 for (let i = 0; i < numFields; i++) {
                     const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
                     if (node.selectionSet.selections[0].selectionSet.selections[i].selectionSet) {
+                        const joinViewName = columnName;
                         const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
                         const toColumnName = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet.selections[0].name.value;
                         console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
-                        joinView = op.fromView(null, columnName)
+                        joinView = op.fromView(null, joinViewName)
                             // Select the ID column and create a second column with a constructed JSON object
                             .select([
-                                op.viewCol(columnName, toColumnName),
+                                op.viewCol(joinViewName, toColumnName),
                                 op.as(
-                                    'joinView',
+                                    joinViewName,
                                     op.jsonObject([
                                         op.prop('ownerId', op.col('ownerId')),
                                         op.prop('year', op.col('year')),
@@ -92,21 +93,33 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                                     ])
                                 )
                             ]);
-                        joinViews.push(joinView);
-                        // opticPlan = opticPlan.joinLeftOuter(
-                        //     joinView,
-                        //     op.on(op.viewCol(viewName, fromColumnName), op.viewCol(columnName, toColumnName))
-                        // ).groupBy(
-                        //     op.viewCol(viewName, fromColumnName),
-                        //     [
-                        //         op.viewCol(viewName,'name'),
-                        //         op.arrayAggregate(columnName,op.col('joinView'))
-                        //     ]
-                        // );
+                        const joinViewInfo = {
+                            "joinView" : joinView,
+                            "joinViewName" : joinViewName,
+                            "fromColumnName" : fromColumnName,
+                            "toColumnName" : toColumnName
+                        }
+                        columnNames.push(op.prop(joinViewName, op.col(joinViewName)));
+                        joinViews.push(joinViewInfo);
                     } else {
                        columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
                     }
                 }
+
+                if (joinViews.length > 0) {
+                   opticPlan = opticPlan.joinLeftOuter(
+                        joinViews[0].joinView,
+                        op.on(op.viewCol(viewName, joinViews[0].fromColumnName), op.viewCol(joinViews[0].joinViewName, joinViews[0].toColumnName))
+                    ).groupBy(
+                        op.viewCol(viewName, joinViews[0].fromColumnName),
+                        [
+                            op.viewCol(viewName,'name'),
+                            op.viewCol(viewName,'height'),
+                            op.arrayAggregate(joinViews[0].joinViewName,op.col(joinViews[0].joinViewName))
+                        ]
+                    );
+                }
+
                 opticPlan = opticPlan.select(
                     op.as(
                         viewName,
