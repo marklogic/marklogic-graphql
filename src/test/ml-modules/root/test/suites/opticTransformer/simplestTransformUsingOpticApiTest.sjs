@@ -1,16 +1,17 @@
 'use strict';
 
 const test = require("/test/test-helper.xqy");
-const {transformGraphqlIntoOpticPlan, executeOpticPlan, deepEqual} = require('/mlGraphqlLibOpticApi');
+const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLibOpticApi');
+const {deepEqual} = require('/testHelpers');
 const op = require('/MarkLogic/optic');
+
+const expectedOpticPlanExport = {"$optic":{"ns":"op","fn":"operators","args":[{"ns":"op","fn":"from-view","args":[null,"Humans",null,null]},{"ns":"op","fn":"select","args":[[{"ns":"op","fn":"as","args":["Humans",{"ns":"op","fn":"json-object","args":[[{"ns":"op","fn":"prop","args":["id",{"ns":"op","fn":"col","args":["id"]}]},{"ns":"op","fn":"prop","args":["name",{"ns":"op","fn":"col","args":["name"]}]}]]}]}],null]},{"ns":"op","fn":"group-by","args":[null,[{"ns":"op","fn":"array-aggregate","args":[{"ns":"op","fn":"col","args":["Humans"]},{"ns":"op","fn":"col","args":["Humans"]},null]}]]}]}};
+const expectedResultsRaw = op.import(expectedOpticPlanExport).result();
+const nb = new NodeBuilder();
+nb.addNode({ "data": expectedResultsRaw });
+const expectedResults = nb.toNode();
 const assertions = [];
 
-const expectedOpticAst = {"$optic":{"ns":"op","fn":"operators","args":[{"ns":"op","fn":"from-view","args":[null,"Humans",null,null]},{"ns":"op","fn":"select","args":[[{"ns":"op","fn":"col","args":["name"]},{"ns":"op","fn":"col","args":["height"]}],null]}]}}
-let opExpectedResult = op.import(expectedOpticAst).result();
-const expectedResultsRaw = {"data":{"Humans":[{"id":1000, "name":"Jane"}, {"id":1001, "name":"Jenny"}, {"id":2, "name":"Jim"}, {"id":3, "name":"Joe"}, {"id":1, "name":"John"}, {"id":1002, "name":"Joan"}]}};
-const nb = new NodeBuilder();
-nb.addNode(expectedResultsRaw);
-const expectedResults = nb.toNode();
 
 // Test #1
 // Given a query with the query keyword and query name
@@ -18,21 +19,18 @@ let simpleGraphQlQueryString = `query someQuery { Humans { name height } }`;
 // When the parse is called
 let response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
-console.log("expectedOpticQueryString:\n" + JSON.stringify(expectedOpticAst));
-console.log("opticAst:\n" + JSON.stringify(response.opticAst));
+console.log("expectedOpticPlanExport:\n" + JSON.stringify(expectedOpticPlanExport));
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
-// assertions.push(
-//     test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
-//         "The resulting Optic DSL does not match the expected Optic DSL"),
-//     test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticPlan.export()),
-//         "The resulting Optic Plan does not match the expected Optic Plan")
-// )
-// Then the result set of the Optic query is what is expected.
-let opActualResult = executeOpticPlan(response.opticPlan);
-console.log("Expected Result=>\n" + expectedResults);
-console.log("Actual Result=>\n" + opActualResult);
 assertions.push(
-    test.assertTrue(deepEqual(expectedResults, opActualResult),
+   test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
+        "The resulting Optic Plan does not match the expected Optic Plan")
+)
+// Then the result set of the Optic query is what is expected.
+let actualResult = executeOpticPlan(response.opticPlan);
+console.log("Expected Result=>\n" + expectedResults);
+console.log("Actual Result=>\n" + actualResult);
+assertions.push(
+    test.assertTrue(deepEqual(expectedResults, actualResult),
         "The resulting data set does not match the expected results.")
 )
 
@@ -45,15 +43,15 @@ simpleGraphQlQueryString = `{ Humans { name height } }`;
 response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
 assertions.push(
-    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
-        "The resulting Optic DSL does not match the expected Optic DSL"),
-    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticPlan.export()),
+    test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.
-opActualResult = executeOpticPlan(response.opticPlan);
+actualResult = executeOpticPlan(response.opticPlan);
+console.log("Expected Result=>\n" + expectedResults);
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
-    test.assertEqual(expectedResults, opActualResult,
+    test.assertTrue(deepEqual(expectedResults, actualResult),
         "The resulting data set does not match the expected results.")
 )
 
@@ -65,15 +63,15 @@ simpleGraphQlQueryString = `query { Humans { name height } }`;
 response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then the returned Optic DSL is what is expected.
 assertions.push(
-    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticAst),
-        "The resulting Optic DSL does not match the expected Optic DSL"),
-    test.assertEqual(JSON.stringify(expectedOpticAst), JSON.stringify(response.opticPlan.export()),
+    test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.
-opActualResult = executeOpticPlan(response.opticPlan);
+actualResult = executeOpticPlan(response.opticPlan);
+console.log("Expected Result=>\n" + expectedResults);
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
-    test.assertEqual(expectedResults, opActualResult,
+    test.assertTrue(deepEqual(expectedResults, actualResult),
         "The resulting data set does not match the expected results.")
 )
 
