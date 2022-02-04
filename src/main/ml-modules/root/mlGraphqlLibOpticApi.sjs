@@ -128,6 +128,15 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                 )
                 opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
 
+                opticPlan = opticPlan.select(
+                    op.as(
+                        "data",
+                        op.jsonObject([
+                            op.prop(viewName, op.col(viewName))
+                        ])
+                    )
+                )
+
                 const queryAst = {
                     "$optic": {
                         "ns":"op",
@@ -242,8 +251,9 @@ function executeOpticPlan(opticPlan) {
     fn.trace("Optic Plan Result\n" + result + "Optic Plan Result Finished", graphqlTraceEvent);
 
     const nb = new NodeBuilder();
-    nb.addNode({ "data": result });
+    nb.addNode(Sequence.from(result).toArray()[0]);
     return nb.toNode();
+    // return result;
 }
 
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;

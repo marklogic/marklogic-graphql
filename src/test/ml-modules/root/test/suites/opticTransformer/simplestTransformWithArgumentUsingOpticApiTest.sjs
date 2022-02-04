@@ -6,15 +6,15 @@ const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLib
 const {deepEqual} = require('/testHelpers');
 
 const simpleGraphQlWithArgumentQueryString = `query someQuery { Humans (id: "1000") { name height } }`;
-const expectedOpticPlanExport = {"$optic":{"ns":"op","fn":"operators","args":[{"ns":"op","fn":"from-view","args":[null,"Humans",null,null]},{"ns":"op","fn":"where","args":[{"ns":"op","fn":"eq","args":[{"ns":"op","fn":"col","args":["id"]},"1000"]}]},{"ns":"op","fn":"select","args":[[{"ns":"op","fn":"as","args":["Humans",{"ns":"op","fn":"json-object","args":[[{"ns":"op","fn":"prop","args":["id",{"ns":"op","fn":"col","args":["id"]}]},{"ns":"op","fn":"prop","args":["name",{"ns":"op","fn":"col","args":["name"]}]}]]}]}],null]},{"ns":"op","fn":"group-by","args":[null,[{"ns":"op","fn":"array-aggregate","args":[{"ns":"op","fn":"col","args":["Humans"]},{"ns":"op","fn":"col","args":["Humans"]},null]}]]}]}}
+const expectedOpticPlanExport = {"$optic":{"ns":"op","fn":"operators","args":[{"ns":"op","fn":"from-view","args":[null,"Humans",null,null]},{"ns":"op","fn":"where","args":[{"ns":"op","fn":"eq","args":[{"ns":"op","fn":"col","args":["id"]},"1000"]}]},{"ns":"op","fn":"select","args":[[{"ns":"op","fn":"as","args":["Humans",{"ns":"op","fn":"json-object","args":[[{"ns":"op","fn":"prop","args":["id",{"ns":"op","fn":"col","args":["id"]}]},{"ns":"op","fn":"prop","args":["name",{"ns":"op","fn":"col","args":["name"]}]}]]}]}],null]},{"ns":"op","fn":"group-by","args":[null,[{"ns":"op","fn":"array-aggregate","args":[{"ns":"op","fn":"col","args":["Humans"]},{"ns":"op","fn":"col","args":["Humans"]},null]}]]},{"ns":"op","fn":"select","args":[[{"ns":"op","fn":"as","args":["data",{"ns":"op","fn":"json-object","args":[[{"ns":"op","fn":"prop","args":["Humans",{"ns":"op","fn":"col","args":["Humans"]}]}]]}]}],null]}]}};
 const expectedResultsRaw = op.import(expectedOpticPlanExport).result();
 const nb = new NodeBuilder();
-nb.addNode({ "data": expectedResultsRaw });
+nb.addNode(Sequence.from(expectedResultsRaw).toArray()[0]);
 const expectedResults = nb.toNode();
 const assertions = [];
 
 const response = transformGraphqlIntoOpticPlan(simpleGraphQlWithArgumentQueryString);
-console.log("expectedOpticPlanExport:\n" + expectedOpticPlanExport);
+console.log("expectedOpticPlanExport:\n" + JSON.stringify(expectedOpticPlanExport));
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
 assertions.push(
     test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
