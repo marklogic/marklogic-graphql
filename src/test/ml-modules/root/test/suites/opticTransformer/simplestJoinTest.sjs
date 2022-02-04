@@ -20,7 +20,7 @@ let response = transformGraphqlIntoOpticPlan(simpleGraphQlJoinQueryString);
 console.log("expectedOpticPlanExport:\n" + JSON.stringify(expectedOpticPlanExport));
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
 assertions.push(
-    test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
+    test.assertTrue(deepEqual(xdmp.toJSON(expectedOpticPlanExport),xdmp.toJSON(response.opticPlan.export())),
         "The resulting Optic Plan does not match the expected Optic Plan")
 )
 // Then the result set of the Optic query is what is expected.

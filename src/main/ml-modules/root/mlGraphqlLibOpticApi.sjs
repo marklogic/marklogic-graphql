@@ -22,9 +22,7 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
         errors.push(errorMessage);
         return {
             graphqlQuery : graphQlQueryStr,
-            opticAst : null,
             opticPlan : null,
-            data : null,
             errors: errors
         }
     }
@@ -63,7 +61,8 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                 }
 
                 const columnNames = [];
-                let joinViews = [];
+                const viewColumns = [];
+                const joinViews = [];
                 let numFields = null;
                 if (node.selectionSet.selections[0].selectionSet) {
                     numFields = node.selectionSet.selections[0].selectionSet.selections.length;
@@ -75,22 +74,25 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                 }
                 for (let i = 0; i < numFields; i++) {
                     const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
-                    if (node.selectionSet.selections[0].selectionSet.selections[i].selectionSet) {
+                    const foreignSelectionSet = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet
+                    if (foreignSelectionSet) {
                         const joinViewName = columnName;
                         const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
-                        const toColumnName = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet.selections[0].name.value;
+                        const toColumnName = foreignSelectionSet.selections[0].name.value;
                         console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
+
+                        const foreignFields = [];
+                        for (let j = 0; j < foreignSelectionSet.selections.length; j++) {
+                            const foreignFieldName = foreignSelectionSet.selections[j].name.value;
+                            foreignFields.push(op.prop(foreignFieldName, op.col(foreignFieldName)));
+                        }
                         joinView = op.fromView(null, joinViewName)
                             // Select the ID column and create a second column with a constructed JSON object
                             .select([
                                 op.viewCol(joinViewName, toColumnName),
                                 op.as(
                                     joinViewName,
-                                    op.jsonObject([
-                                        op.prop('ownerId', op.col('ownerId')),
-                                        op.prop('year', op.col('year')),
-                                        op.prop('model', op.col('model'))
-                                    ])
+                                    op.jsonObject(foreignFields)
                                 )
                             ]);
                         const joinViewInfo = {
@@ -101,22 +103,21 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
                         }
                         columnNames.push(op.prop(joinViewName, op.col(joinViewName)));
                         joinViews.push(joinViewInfo);
+                        viewColumns.push(op.arrayAggregate(joinViewName,op.col(joinViewName)))
                     } else {
-                       columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
+                        columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
+                        viewColumns.push(op.viewCol(viewName,columnName));
                     }
                 }
 
                 if (joinViews.length > 0) {
-                   opticPlan = opticPlan.joinLeftOuter(
-                        joinViews[0].joinView,
-                        op.on(op.viewCol(viewName, joinViews[0].fromColumnName), op.viewCol(joinViews[0].joinViewName, joinViews[0].toColumnName))
+                    const currentView = joinViews[0];
+                    opticPlan = opticPlan.joinLeftOuter(
+                        currentView.joinView,
+                        op.on(op.viewCol(viewName, currentView.fromColumnName), op.viewCol(currentView.joinViewName, currentView.toColumnName))
                     ).groupBy(
-                        op.viewCol(viewName, joinViews[0].fromColumnName),
-                        [
-                            op.viewCol(viewName,'name'),
-                            op.viewCol(viewName,'height'),
-                            op.arrayAggregate(joinViews[0].joinViewName,op.col(joinViews[0].joinViewName))
-                        ]
+                        op.viewCol(viewName, currentView.fromColumnName),
+                        viewColumns.slice(1)
                     );
                 }
 
@@ -220,16 +221,13 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
             depth--;
         }
     }
-    const opticAst = visit(queryDocumentAst, nodeTypeVisitors);
-    fn.trace("transformToJsonAst=>\n" + JSON.stringify(opticAst) + "\nEnd transformToJsonAst", graphqlTraceEvent);
+    visit(queryDocumentAst, nodeTypeVisitors);
     fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
 
 
     return {
         graphqlQuery : graphQlQueryStr,
-        opticAst : opticAst,
         opticPlan : opticPlan,
-        data : null,
         errors: errors
     }
 }
@@ -244,7 +242,6 @@ function executeOpticPlan(opticPlan) {
     const nb = new NodeBuilder();
     nb.addNode(Sequence.from(result).toArray()[0]);
     return nb.toNode();
-    // return result;
 }
 
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
