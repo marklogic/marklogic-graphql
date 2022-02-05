@@ -110,7 +110,7 @@ response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
 // Then an error is returned
 assertions.push(
     test.assertEqual(1, response.errors.length, "The GraphQL Query string should have resulted in an error."),
-    test.assertEqual("Queries must contain a SelectionSet for each View: \n" + simpleGraphQlQueryString, response.errors[0],
+    test.assertEqual("Queries must contain a SelectionSet for each View.", response.errors[0],
         "The error message does not match")
 )
 

@@ -8,6 +8,7 @@ const { print } = require('/graphql/language/printer');
 const op = require('/MarkLogic/optic');
 
 const graphqlTraceEvent = "GRAPHQL";
+let errors = [];
 
 function processJoin(joinViewName, foreignSelectionSet, fromColumnName) {
     const toColumnName = foreignSelectionSet.selections[0].name.value;
@@ -36,10 +37,74 @@ function processJoin(joinViewName, foreignSelectionSet, fromColumnName) {
     return joinViewInfo;
 }
 
+function processView(node) {
+    const viewName = node.selectionSet.selections[0].name.value;
+    opticPlan = op.fromView(null, viewName);
+
+    const numArguments = node.selectionSet.selections[0].arguments.length;
+    for (let i = 0; i < numArguments; i++) {
+        const argumentName = node.selectionSet.selections[0].arguments[i].name.value;
+        const argumentValue = node.selectionSet.selections[0].arguments[i].value.value;
+        opticPlan = opticPlan.where(op.eq(op.viewCol(viewName, argumentName), argumentValue));
+    }
+
+    const columnNames = [];
+    const viewColumns = [];
+    const joinViews = [];
+    let numFields = null;
+    if (node.selectionSet.selections[0].selectionSet) {
+        numFields = node.selectionSet.selections[0].selectionSet.selections.length;
+    } else {
+        const errorMessage = "Queries must contain a SelectionSet for each View.";
+        fn.trace(errorMessage, graphqlTraceEvent);
+        errors.push(errorMessage);
+        return false;
+    }
+
+    // Get field information
+    // If the field is a join, dig down.
+    const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
+    for (let i = 0; i < numFields; i++) {
+        const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
+        const foreignSelectionSet = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet
+        if (foreignSelectionSet) {
+            const joinViewInfo = processJoin(columnName, foreignSelectionSet, fromColumnName);
+            columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
+            joinViews.push(joinViewInfo);
+            viewColumns.push(op.arrayAggregate(joinViewInfo.joinViewName,op.col(joinViewInfo.joinViewName)))
+        } else {
+            columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
+            viewColumns.push(op.viewCol(viewName,columnName));
+        }
+    }
+
+    // If there are any joins, add them
+    if (joinViews.length > 0) {
+        const currentView = joinViews[0];
+        opticPlan = opticPlan.joinLeftOuter(
+            currentView.joinView,
+            op.on(op.viewCol(viewName, currentView.fromColumnName), op.viewCol(currentView.joinViewName, currentView.toColumnName))
+        ).groupBy(
+            op.viewCol(viewName, currentView.fromColumnName),
+            viewColumns.slice(1)
+        );
+    }
+
+    // Add all the columns to the JSON object built for the view
+    opticPlan = opticPlan.select(
+        op.as(
+            viewName,
+            op.jsonObject(columnNames)
+        )
+    )
+    opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
+    return opticPlan;
+}
+
 function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     let opticPlan = null;
-    const errors = [];
     let queryDocumentAst = null;
+    errors = [];
 
     try {
         queryDocumentAst = parse(graphQlQueryStr);
@@ -57,14 +122,10 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
 
     let depth = 0;
     let expectingAQuery = false;
-    let inAQuery = false;
-    let currentQueryName = null;
-    let lookingForViewName = false;
 
     const documentVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            return visit(node.definitions[0], nodeTypeVisitors);
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
@@ -75,68 +136,10 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
         enter(node, key, parent, path, ancestors) {
             depth++;
             if (node.operation === "query") {
-                expectingAQuery = true;
                 fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
+                opticPlan = processView(node);
+                if (!opticPlan) { return false }
                 const viewName = node.selectionSet.selections[0].name.value;
-                opticPlan = op.fromView(null, viewName);
-
-                const numArguments = node.selectionSet.selections[0].arguments.length;
-                for (let i = 0; i < numArguments; i++) {
-                    const argumentName = node.selectionSet.selections[0].arguments[i].name.value;
-                    const argumentValue = node.selectionSet.selections[0].arguments[i].value.value;
-                    opticPlan = opticPlan.where(op.eq(op.viewCol(viewName, argumentName), argumentValue));
-                }
-
-                const columnNames = [];
-                const viewColumns = [];
-                const joinViews = [];
-                let numFields = null;
-                if (node.selectionSet.selections[0].selectionSet) {
-                    numFields = node.selectionSet.selections[0].selectionSet.selections.length;
-                } else {
-                    const errorMessage = "Queries must contain a SelectionSet for each View: \n" + graphQlQueryStr;
-                    fn.trace(errorMessage, graphqlTraceEvent);
-                    errors.push(errorMessage);
-                    return false;
-                }
-
-                // Get field information
-                // If the field is a join, dig down.
-                const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
-                for (let i = 0; i < numFields; i++) {
-                    const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
-                    const foreignSelectionSet = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet
-                    if (foreignSelectionSet) {
-                        const joinViewInfo = processJoin(columnName, foreignSelectionSet, fromColumnName);
-                        columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
-                        joinViews.push(joinViewInfo);
-                        viewColumns.push(op.arrayAggregate(joinViewInfo.joinViewName,op.col(joinViewInfo.joinViewName)))
-                    } else {
-                        columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
-                        viewColumns.push(op.viewCol(viewName,columnName));
-                    }
-                }
-
-                // If there are any joins, add them
-                if (joinViews.length > 0) {
-                    const currentView = joinViews[0];
-                    opticPlan = opticPlan.joinLeftOuter(
-                        currentView.joinView,
-                        op.on(op.viewCol(viewName, currentView.fromColumnName), op.viewCol(currentView.joinViewName, currentView.toColumnName))
-                    ).groupBy(
-                        op.viewCol(viewName, currentView.fromColumnName),
-                        viewColumns.slice(1)
-                    );
-                }
-
-                // Add all the columns to the JSON object built for the view
-                opticPlan = opticPlan.select(
-                    op.as(
-                        viewName,
-                        op.jsonObject(columnNames)
-                    )
-                )
-                opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
 
                 opticPlan = opticPlan.select(
                     op.as(
@@ -156,10 +159,6 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     const selectionSetVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            if ((parent) && (parent.kind === "OperationDefinition") && expectingAQuery) {
-                inAQuery = true;
-                lookingForViewName = true;
-            }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
@@ -178,15 +177,6 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     const fieldVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            if ((key === 0) && lookingForViewName) {
-                const viewName = node.name.value;
-                lookingForViewName = false;
-
-                if (node.arguments.length > 0) {
-                    const argumentName = node.arguments[0].name.value;
-                    const argumentValue = node.arguments[0].value.value;
-                }
-            }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
@@ -196,9 +186,6 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     const nameVisitor = {
         enter(node, key, parent, path, ancestors) {
             depth++;
-            if ((parent.kind === "OperationDefinition") && expectingAQuery) {
-                currentQueryName = node.value;
-            }
         },
         leave(node, key, parent, path, ancestors) {
             depth--;
