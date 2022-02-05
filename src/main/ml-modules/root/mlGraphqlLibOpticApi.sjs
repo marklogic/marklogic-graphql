@@ -3,7 +3,6 @@
 this.process = { env: { NODE_ENV: 'development'} };
 
 const { parse } = require('/graphql/language/parser');
-const { visit } = require('/graphql/language/visitor');
 const { print } = require('/graphql/language/printer');
 const op = require('/MarkLogic/optic');
 
@@ -37,16 +36,19 @@ function processJoin(joinViewName, foreignSelectionSet, fromColumnName) {
     return joinViewInfo;
 }
 
-function processView(node) {
-    const viewName = node.selectionSet.selections[0].name.value;
-    opticPlan = op.fromView(null, viewName);
-
-    const numArguments = node.selectionSet.selections[0].arguments.length;
-    for (let i = 0; i < numArguments; i++) {
-        const argumentName = node.selectionSet.selections[0].arguments[i].name.value;
-        const argumentValue = node.selectionSet.selections[0].arguments[i].value.value;
+function addWhereClausesFromArguments(opticPlan, arguments, viewName) {
+    for (let i = 0; i < arguments.length; i++) {
+        const argumentName = arguments[i].name.value;
+        const argumentValue = arguments[i].value.value;
         opticPlan = opticPlan.where(op.eq(op.viewCol(viewName, argumentName), argumentValue));
     }
+    return opticPlan;
+}
+
+function processPrimaryView(node) {
+    const viewName = node.selectionSet.selections[0].name.value;
+    let opticPlan = op.fromView(null, viewName);
+    opticPlan = addWhereClausesFromArguments(opticPlan, node.selectionSet.selections[0].arguments, viewName);
 
     const columnNames = [];
     const viewColumns = [];
@@ -101,6 +103,24 @@ function processView(node) {
     return opticPlan;
 }
 
+function processQuery(operationNode) {
+    fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
+    let opticPlan = processPrimaryView(operationNode);
+    if (!opticPlan) {
+        return null;
+    }
+    const viewName = operationNode.selectionSet.selections[0].name.value;
+    opticPlan = opticPlan.select(
+        op.as(
+            "data",
+            op.jsonObject([
+                op.prop(viewName, op.col(viewName))
+            ])
+        )
+    )
+    return opticPlan;
+}
+
 function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     let opticPlan = null;
     let queryDocumentAst = null;
@@ -108,6 +128,7 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
 
     try {
         queryDocumentAst = parse(graphQlQueryStr);
+        fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
     } catch (error) {
         const errorMessage = "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
         console.error(errorMessage);
@@ -118,108 +139,16 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
             errors: errors
         }
     }
-    fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
 
-    let depth = 0;
-    let expectingAQuery = false;
-
-    const documentVisitor = {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-
-    const operationDefinitionVisitor =  {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-            if (node.operation === "query") {
-                fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
-                opticPlan = processView(node);
-                if (!opticPlan) { return false }
-                const viewName = node.selectionSet.selections[0].name.value;
-
-                opticPlan = opticPlan.select(
-                    op.as(
-                        "data",
-                        op.jsonObject([
-                            op.prop(viewName, op.col(viewName))
-                        ])
-                    )
-                )
+    if (queryDocumentAst.kind = "Document") {
+        const numDefinitions = queryDocumentAst.definitions.length;
+        for (let d = 0; d < numDefinitions; d++) {
+            if (queryDocumentAst.definitions[d].operation === "query") {
+                opticPlan = processQuery(queryDocumentAst.definitions[d]);
+                fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
             }
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
         }
     }
-
-    const selectionSetVisitor = {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-
-    const argumentVisitor = {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-
-    const fieldVisitor = {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-
-    const nameVisitor = {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-
-    const stringValueVisitor = {
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-
-    const nodeTypeVisitors = {
-        Document: documentVisitor,
-        OperationDefinition: operationDefinitionVisitor,
-        SelectionSet: selectionSetVisitor,
-        Argument: argumentVisitor,
-        Field: fieldVisitor,
-        Name: nameVisitor,
-        StringValue: stringValueVisitor,
-
-        enter(node, key, parent, path, ancestors) {
-            depth++;
-        },
-        leave(node, key, parent, path, ancestors) {
-            depth--;
-        }
-    }
-    visit(queryDocumentAst, nodeTypeVisitors);
-    fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
-
 
     return {
         graphqlQuery : graphQlQueryStr,
