@@ -9,18 +9,21 @@ const op = require('/MarkLogic/optic');
 const graphqlTraceEvent = "GRAPHQL";
 let errors = [];
 
-function processJoin(joinViewName, foreignSelectionSet, fromColumnName) {
+function processJoin(joinField, fromColumnName) {
+    const foreignSelectionSet = joinField.selectionSet
     const toColumnName = foreignSelectionSet.selections[0].name.value;
     console.log("Found a Join. From " + fromColumnName + " to " + toColumnName);
+    const joinViewName = joinField.name.value;
+    let joinView = op.fromView(null, joinViewName)
+    joinView = addWhereClausesFromArguments(joinView, joinField.arguments, joinViewName);
 
     const foreignFields = [];
     for (let j = 0; j < foreignSelectionSet.selections.length; j++) {
         const foreignFieldName = foreignSelectionSet.selections[j].name.value;
         foreignFields.push(op.prop(foreignFieldName, op.col(foreignFieldName)));
     }
-    joinView = op.fromView(null, joinViewName)
-        // Select the ID column and create a second column with a constructed JSON object
-        .select([
+    // Select the ID column and create a second column with a constructed JSON object
+    joinView = joinView.select([
             op.viewCol(joinViewName, toColumnName),
             op.as(
                 joinViewName,
@@ -37,6 +40,7 @@ function processJoin(joinViewName, foreignSelectionSet, fromColumnName) {
 }
 
 function addWhereClausesFromArguments(opticPlan, arguments, viewName) {
+    console.log("Arguments: " + JSON.stringify(arguments));
     for (let i = 0; i < arguments.length; i++) {
         const argumentName = arguments[i].name.value;
         const argumentValue = arguments[i].value.value;
@@ -70,7 +74,8 @@ function processPrimaryView(node) {
         const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
         const foreignSelectionSet = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet
         if (foreignSelectionSet) {
-            const joinViewInfo = processJoin(columnName, foreignSelectionSet, fromColumnName);
+            const joinField = node.selectionSet.selections[0].selectionSet.selections[i]
+            const joinViewInfo = processJoin(joinField, fromColumnName);
             columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
             joinViews.push(joinViewInfo);
             viewColumns.push(op.arrayAggregate(joinViewInfo.joinViewName,op.col(joinViewInfo.joinViewName)))
