@@ -1,5 +1,4 @@
-//const {callGraphQlParse} = require('/mlGraphqlLib');
-const {callGraphQlParse} = require('/mlGraphqlLibOpticApi');
+const {executeOpticPlan, transformGraphqlIntoOpticPlan} = require('/mlGraphqlLibOpticApi');
 
 function get(context, params) {
     return Sequence.from([]);
@@ -9,12 +8,20 @@ function post(context, params, graphQlQueryStr) {
     fn.trace('graphQlQueryStr=>\n' + graphQlQueryStr, "GRAPHQL");
 
     if (context.inputTypes[0] === "application/graphql") {
-        const parseResult = callGraphQlParse(graphQlQueryStr.toString());
+        const parseResult = transformGraphqlIntoOpticPlan(graphQlQueryStr.toString());
 
-        context.outputTypes = [];
-        context.outputTypes.push('application/json');
-        context.outputStatus = [201, 'Parsing incomplete'];
-        return parseResult;
+        if (parseResult.errors.length === 0) {
+            const queryResult = executeOpticPlan(parseResult.opticPlan);
+            context.outputTypes = [];
+            context.outputTypes.push('application/json');
+            context.outputStatus = [201, 'Parsing is a work in-progress.'];
+            return queryResult;
+        } else {
+            context.outputTypes = [];
+            context.outputTypes.push('application/json');
+            context.outputStatus = [500, 'Errors found while parsing the query'];
+            return parseResult.errors;
+        }
     } else {
         context.outputTypes = [];
         context.outputTypes.push('application/json');

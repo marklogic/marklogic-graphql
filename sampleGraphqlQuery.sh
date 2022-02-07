@@ -1,1 +1,1 @@
-curl --digest --user admin:admin -X POST -H "Content-type: application/txt" -d'{ query { user } }' http://localhost:8003/LATEST/resources/graphql
+curl --digest --user admin:admin -X POST -H "Content-type: application/graphql" -d'query someQuery { Humans { name height } }' http://localhost:8004/LATEST/resources/graphql
