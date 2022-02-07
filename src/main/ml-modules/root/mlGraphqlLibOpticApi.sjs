@@ -49,32 +49,20 @@ function addWhereClausesFromArguments(opticPlan, arguments, viewName) {
     return opticPlan;
 }
 
-function processPrimaryView(node) {
-    const viewName = node.selectionSet.selections[0].name.value;
-    let opticPlan = op.fromView(null, viewName);
-    opticPlan = addWhereClausesFromArguments(opticPlan, node.selectionSet.selections[0].arguments, viewName);
-
+function addFieldInformation(opticPlan, fieldSelectionSet, viewName) {
     const columnNames = [];
     const viewColumns = [];
     const joinViews = [];
-    let numFields = null;
-    if (node.selectionSet.selections[0].selectionSet) {
-        numFields = node.selectionSet.selections[0].selectionSet.selections.length;
-    } else {
-        const errorMessage = "Queries must contain a SelectionSet for each View.";
-        fn.trace(errorMessage, graphqlTraceEvent);
-        errors.push(errorMessage);
-        return false;
-    }
+    let numFields = fieldSelectionSet.selections.length;
 
     // Get field information
     // If the field is a join, dig down.
-    const fromColumnName = node.selectionSet.selections[0].selectionSet.selections[0].name.value;
+    const fromColumnName = fieldSelectionSet.selections[0].name.value;
     for (let i = 0; i < numFields; i++) {
-        const columnName = node.selectionSet.selections[0].selectionSet.selections[i].name.value;
-        const foreignSelectionSet = node.selectionSet.selections[0].selectionSet.selections[i].selectionSet
+        const columnName = fieldSelectionSet.selections[i].name.value;
+        const foreignSelectionSet = fieldSelectionSet.selections[i].selectionSet
         if (foreignSelectionSet) {
-            const joinField = node.selectionSet.selections[0].selectionSet.selections[i]
+            const joinField = fieldSelectionSet.selections[i]
             const joinViewInfo = processJoin(joinField, fromColumnName);
             columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
             joinViews.push(joinViewInfo);
@@ -104,6 +92,22 @@ function processPrimaryView(node) {
             op.jsonObject(columnNames)
         )
     )
+    return opticPlan;
+}
+
+function processPrimaryView(node) {
+    const viewName = node.selectionSet.selections[0].name.value;
+    let opticPlan = op.fromView(null, viewName);
+    opticPlan = addWhereClausesFromArguments(opticPlan, node.selectionSet.selections[0].arguments, viewName);
+
+    const fieldSelectionSet = node.selectionSet.selections[0].selectionSet;
+    if (!fieldSelectionSet) {
+        const errorMessage = "Queries must contain a SelectionSet for each View.";
+        fn.trace(errorMessage, graphqlTraceEvent);
+        errors.push(errorMessage);
+        return false;
+    }
+    opticPlan = addFieldInformation(opticPlan, fieldSelectionSet, viewName);
     opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
     return opticPlan;
 }
