@@ -123,6 +123,52 @@ var template = xdmp.toJSON(
 );
 tde.templateInsert("/templates/laptops-TDE.tdej", template);
 
+var template = xdmp.toJSON(
+    {
+        "template":{
+            "context":"/televisions/television",
+            "rows":[
+                {
+                    "schemaName":"graphql",
+                    "viewName":"Televisions",
+                    "columns":[
+                        {
+                            "name":"id",
+                            "scalarType":"integer",
+                            "val":"id"
+                        },
+                        {
+                            "name":"ownerId",
+                            "scalarType":"integer",
+                            "val":"ownerId"
+                        },
+                        {
+                            "name":"model",
+                            "scalarType":"string",
+                            "val":"model",
+                            "nullable": true
+                        },
+                        {
+                            "name":"screenSize",
+                            "scalarType":"string",
+                            "val":"screenSize",
+                            "nullable": true
+                        },
+                        {
+                            "name":"year",
+                            "scalarType":"string",
+                            "val":"year",
+                            "nullable": true
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+);
+tde.templateInsert("/templates/televisions-TDE.tdej", template);
+
 test.loadTestFile("humans.xml", xdmp.database(), "/humans.xml");
 test.loadTestFile("cars.xml", xdmp.database(), "/cars.xml");
 test.loadTestFile("laptops.xml", xdmp.database(), "/laptops.xml");
+test.loadTestFile("televisions.xml", xdmp.database(), "/televisions.xml");
