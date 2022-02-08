@@ -40,7 +40,6 @@ function processJoin(joinField, fromColumnName) {
 }
 
 function addWhereClausesFromArguments(opticPlan, arguments, viewName) {
-    console.log("Arguments: " + JSON.stringify(arguments));
     for (let i = 0; i < arguments.length; i++) {
         const argumentName = arguments[i].name.value;
         const argumentValue = arguments[i].value.value;
@@ -49,10 +48,11 @@ function addWhereClausesFromArguments(opticPlan, arguments, viewName) {
     return opticPlan;
 }
 
-function addFieldInformation(opticPlan, fieldSelectionSet, viewName) {
+function getInformationFromFields(fieldSelectionSet, viewName) {
     const columnNames = [];
+    const nonJoinColumnNameStrings = [];
     const viewColumns = [];
-    const joinViews = [];
+    const joinViewInfos = [];
     let numFields = fieldSelectionSet.selections.length;
 
     // Get field information
@@ -65,40 +65,25 @@ function addFieldInformation(opticPlan, fieldSelectionSet, viewName) {
             const joinField = fieldSelectionSet.selections[i]
             const joinViewInfo = processJoin(joinField, fromColumnName);
             columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
-            joinViews.push(joinViewInfo);
-            viewColumns.push(op.arrayAggregate(joinViewInfo.joinViewName,op.col(joinViewInfo.joinViewName)))
+            joinViewInfos.push(joinViewInfo);
+            // viewColumns.push(op.arrayAggregate(joinViewInfo.joinViewName,op.col(joinViewInfo.joinViewName)))
         } else {
             columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
             viewColumns.push(op.viewCol(viewName,columnName));
+            nonJoinColumnNameStrings.push(columnName);
         }
     }
-
-    // If there are any joins, add them
-    if (joinViews.length > 0) {
-        const currentView = joinViews[0];
-        opticPlan = opticPlan.joinLeftOuter(
-            currentView.joinView,
-            op.on(op.viewCol(viewName, currentView.fromColumnName), op.viewCol(currentView.joinViewName, currentView.toColumnName))
-        ).groupBy(
-            op.viewCol(viewName, currentView.fromColumnName),
-            viewColumns.slice(1)
-        );
+    return {
+        "columnNames" : columnNames,
+        "nonJoinColumnNameStrings" : nonJoinColumnNameStrings,
+        "viewColumns" : viewColumns,
+        "joinViewInfos" : joinViewInfos
     }
-
-    // Add all the columns to the JSON object built for the view
-    opticPlan = opticPlan.select(
-        op.as(
-            viewName,
-            op.jsonObject(columnNames)
-        )
-    )
-    return opticPlan;
 }
 
 function processPrimaryView(node) {
     const viewName = node.selectionSet.selections[0].name.value;
-    let opticPlan = op.fromView(null, viewName);
-    opticPlan = addWhereClausesFromArguments(opticPlan, node.selectionSet.selections[0].arguments, viewName);
+    let opticPlan = null;
 
     const fieldSelectionSet = node.selectionSet.selections[0].selectionSet;
     if (!fieldSelectionSet) {
@@ -107,7 +92,59 @@ function processPrimaryView(node) {
         errors.push(errorMessage);
         return false;
     }
-    opticPlan = addFieldInformation(opticPlan, fieldSelectionSet, viewName);
+    const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName);
+
+    // If there are any joins, add them
+    if (fieldInfo.joinViewInfos.length == 0) {
+        opticPlan = op.fromView(null, viewName);
+        opticPlan = addWhereClausesFromArguments(opticPlan, node.selectionSet.selections[0].arguments, viewName);
+    } else {
+        for (let i=0; i < fieldInfo.joinViewInfos.length; i++) {
+            let viewPlan = op.fromView(null, viewName);
+            viewPlan = addWhereClausesFromArguments(viewPlan, node.selectionSet.selections[0].arguments, viewName);
+
+            const currentView = fieldInfo.joinViewInfos[i];
+            const currentViewName = currentView.joinViewName;
+            const viewAlias = (i == 0) ? viewName : "primaryViewAlias" + i;
+            let primaryViewPlan = op.fromView(null, viewName, viewAlias);
+            primaryViewPlan = addWhereClausesFromArguments(primaryViewPlan, node.selectionSet.selections[0].arguments, viewName);
+            primaryViewPlan = primaryViewPlan.select(fieldInfo.nonJoinColumnNameStrings);
+
+            const aggregateColumns = []
+            for (let j=1; j < fieldInfo.nonJoinColumnNameStrings.length; j++) {
+                aggregateColumns.push(
+                    op.viewCol(viewAlias, fieldInfo.nonJoinColumnNameStrings[j])
+                );
+            }
+            aggregateColumns.push(
+                op.arrayAggregate(currentViewName,op.col(currentViewName))
+            );
+
+            viewPlan = primaryViewPlan.joinLeftOuter(
+                currentView.joinView,
+                op.on(op.viewCol(viewAlias, currentView.fromColumnName), op.viewCol(currentViewName, currentView.toColumnName))
+            ).groupBy(
+                op.viewCol(viewAlias, currentView.fromColumnName),
+                aggregateColumns
+            );
+            if (i > 0) {
+                opticPlan = opticPlan.joinLeftOuter(
+                    viewPlan,
+                    op.on(op.viewCol(viewAlias, 'id'), op.viewCol(viewName, 'id'))
+                )
+            } else {
+                opticPlan = viewPlan;
+            }
+        }
+    }
+
+    // Add all the columns to the JSON object built for the view
+    opticPlan = opticPlan.select(
+        op.as(
+            viewName,
+            op.jsonObject(fieldInfo.columnNames)
+        )
+    )
     opticPlan = opticPlan.groupBy(null, op.arrayAggregate(viewName, op.col(viewName)))
     return opticPlan;
 }
