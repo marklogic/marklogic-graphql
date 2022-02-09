@@ -55,15 +55,16 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
 
     // Get field information
     // If the field is a join, drill down.
-    const fromColumnName = fieldSelectionSet.selections[0].name.value;
     for (let i = 0; i < numFields; i++) {
         const columnName = fieldSelectionSet.selections[i].name.value;
         const foreignSelectionSet = fieldSelectionSet.selections[i].selectionSet
         if (foreignSelectionSet) {
             const joinField = fieldSelectionSet.selections[i]
+            const fromColumnName = fieldSelectionSet.selections[i+1].name.value;
             const joinViewInfo = processJoin(joinField, fromColumnName);
             columnNames.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
             joinViewInfos.push(joinViewInfo);
+            i++;
         } else {
             columnNames.push(op.prop(columnName, op.viewCol(viewName, columnName)));
             nonJoinColumnNameStrings.push(columnName);

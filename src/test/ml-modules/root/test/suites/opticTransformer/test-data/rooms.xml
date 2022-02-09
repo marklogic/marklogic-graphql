@@ -12,11 +12,11 @@
     <room>
         <id>3</id>
         <houseId>2</houseId>
-        <type>Bedroom</type>
+        <type>Dining</type>
     </room>
     <room>
         <id>4</id>
         <houseId>3</houseId>
-        <type>Kitchen</type>
+        <type>Living</type>
     </room>
 </rooms>

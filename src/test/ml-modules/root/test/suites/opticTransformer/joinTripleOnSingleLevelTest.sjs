@@ -5,7 +5,7 @@ const test = require("/test/test-helper.xqy");
 const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLibOpticApi');
 const {deepEqual} = require('/testHelpers');
 
-const simpleGraphQlJoinQueryString = `query humansCarsJoin { Humans { id name height Cars { ownerId model year } Laptops { ownerId model screenSize } Houses { ownerId number street } } }`;
+const simpleGraphQlJoinQueryString = `query humansCarsJoin { Humans { id name height Cars { ownerId model year } id Laptops { ownerId model screenSize } id Houses { ownerId number street } id } }`;
 const rawExpectedResult = {"data":{"Humans":[{"id":1, "name":"John", "height":70, "Cars":[{"ownerId":1, "model":"Accord", "year":"2013"}], "Laptops":[], "Houses":[]}, {"id":2, "name":"Jim", "height":75, "Cars":[], "Laptops":[{"ownerId":2, "model":"HP", "screenSize":"15"}], "Houses":[{"ownerId":2, "number":"415", "street":"Elm"}]}, {"id":3, "name":"Joe", "height":80, "Cars":[], "Laptops":[], "Houses":[{"ownerId":3, "number":"656", "street":"Main"}, {"ownerId":3, "number":"653", "street":"Second"}]}, {"id":1000, "name":"Jane", "height":65, "Cars":[{"ownerId":1000, "model":"Sonata", "year":"2017"}, {"ownerId":1000, "model":"Camry", "year":"2015"}], "Laptops":[{"ownerId":1000, "model":"HP", "screenSize":"17"}, {"ownerId":1000, "model":"Apple", "screenSize":"13"}], "Houses":[]}, {"id":1001, "name":"Jenny", "height":65, "Cars":[], "Laptops":[], "Houses":[]}, {"id":1002, "name":"Joan", "height":65, "Cars":[], "Laptops":[], "Houses":[]}]}};
 const nb = new NodeBuilder();
 nb.addNode(rawExpectedResult);
