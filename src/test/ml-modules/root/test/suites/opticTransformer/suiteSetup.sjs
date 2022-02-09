@@ -2,197 +2,22 @@
 declareUpdate();
 
 const test = require("/test/test-helper.xqy");
-
 var tde = require("/MarkLogic/tde.xqy");
+
 // Load the TDE template
-var template = xdmp.toJSON(
-    {
-        "template":{
-            "context":"/humans/human",
-            "rows":[
-                {
-                    "schemaName":"graphql",
-                    "viewName":"Humans",
-                    "columns":[
-                        {
-                            "name":"id",
-                            "scalarType":"integer",
-                            "val":"id"
-                        },
-                        {
-                            "name":"name",
-                            "scalarType":"string",
-                            "val":"name",
-                            "nullable": true
-                        },
-                        {
-                            "name":"height",
-                            "scalarType":"long",
-                            "val":"height",
-                            "nullable": true
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-);
+var template = xdmp.toJSON(test.getTestFile("humans-TDE.tdej"));
 tde.templateInsert("/templates/humans-TDE.tdej", template);
 
-var template = xdmp.toJSON(
-    {
-        "template":{
-            "context":"/cars/car",
-            "rows":[
-                {
-                    "schemaName":"graphql",
-                    "viewName":"Cars",
-                    "columns":[
-                        {
-                            "name":"id",
-                            "scalarType":"integer",
-                            "val":"id"
-                        },
-                        {
-                            "name":"ownerId",
-                            "scalarType":"integer",
-                            "val":"ownerId"
-                        },
-                        {
-                            "name":"model",
-                            "scalarType":"string",
-                            "val":"model",
-                            "nullable": true
-                        },
-                        {
-                            "name":"year",
-                            "scalarType":"string",
-                            "val":"year",
-                            "nullable": true
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-);
+var template = xdmp.toJSON(test.getTestFile("cars-TDE.tdej"));
 tde.templateInsert("/templates/cars-TDE.tdej", template);
 
-var template = xdmp.toJSON(
-    {
-        "template":{
-            "context":"/laptops/laptop",
-            "rows":[
-                {
-                    "schemaName":"graphql",
-                    "viewName":"Laptops",
-                    "columns":[
-                        {
-                            "name":"id",
-                            "scalarType":"integer",
-                            "val":"id"
-                        },
-                        {
-                            "name":"ownerId",
-                            "scalarType":"integer",
-                            "val":"ownerId"
-                        },
-                        {
-                            "name":"model",
-                            "scalarType":"string",
-                            "val":"model",
-                            "nullable": true
-                        },
-                        {
-                            "name":"screenSize",
-                            "scalarType":"string",
-                            "val":"screenSize",
-                            "nullable": true
-                        },
-                        {
-                            "name":"year",
-                            "scalarType":"string",
-                            "val":"year",
-                            "nullable": true
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-);
+var template = xdmp.toJSON(test.getTestFile("laptops-TDE.tdej"));
 tde.templateInsert("/templates/laptops-TDE.tdej", template);
 
-var template = xdmp.toJSON(
-    {
-        "template":{
-            "context":"/houses/house",
-            "rows":[
-                {
-                    "schemaName":"graphql",
-                    "viewName":"Houses",
-                    "columns":[
-                        {
-                            "name":"id",
-                            "scalarType":"integer",
-                            "val":"id"
-                        },
-                        {
-                            "name":"ownerId",
-                            "scalarType":"integer",
-                            "val":"ownerId"
-                        },
-                        {
-                            "name":"number",
-                            "scalarType":"string",
-                            "val":"number",
-                            "nullable": true
-                        },
-                        {
-                            "name":"street",
-                            "scalarType":"string",
-                            "val":"street",
-                            "nullable": true
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-);
+var template = xdmp.toJSON(test.getTestFile("houses-TDE.tdej"));
 tde.templateInsert("/templates/houses-TDE.tdej", template);
 
-var template = xdmp.toJSON(
-    {
-        "template":{
-            "context":"/rooms/room",
-            "rows":[
-                {
-                    "schemaName":"graphql",
-                    "viewName":"Rooms",
-                    "columns":[
-                        {
-                            "name":"id",
-                            "scalarType":"integer",
-                            "val":"id"
-                        },
-                        {
-                            "name":"houseId",
-                            "scalarType":"integer",
-                            "val":"houseId"
-                        },
-                        {
-                            "name":"type",
-                            "scalarType":"string",
-                            "val":"type",
-                            "nullable": true
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-);
+var template = xdmp.toJSON(test.getTestFile("rooms-TDE.tdej"));
 tde.templateInsert("/templates/rooms-TDE.tdej", template);
 
 test.loadTestFile("humans.xml", xdmp.database(), "/humans.xml");
