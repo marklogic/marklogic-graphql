@@ -54,7 +54,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     let numFields = fieldSelectionSet.selections.length;
 
     // Get field information
-    // If the field is a join, dig down.
+    // If the field is a join, drill down.
     const fromColumnName = fieldSelectionSet.selections[0].name.value;
     for (let i = 0; i < numFields; i++) {
         const columnName = fieldSelectionSet.selections[i].name.value;
@@ -87,11 +87,11 @@ function processPrimaryView(node) {
         errors.push(errorMessage);
         return false;
     }
-    const fieldInfo = getInformationFromFields(fieldSelectionSet, primaryViewName);
 
     opticPlan = op.fromView(null, primaryViewName);
     opticPlan = addWhereClausesFromArguments(opticPlan, node.selectionSet.selections[0].arguments, primaryViewName);
 
+    const fieldInfo = getInformationFromFields(fieldSelectionSet, primaryViewName);
     const previousAggregateColumnNames = [];
     for (let i=0; i < fieldInfo.joinViewInfos.length; i++) {
         const currentView = fieldInfo.joinViewInfos[i];

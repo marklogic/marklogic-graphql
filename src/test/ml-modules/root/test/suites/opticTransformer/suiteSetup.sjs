@@ -126,11 +126,11 @@ tde.templateInsert("/templates/laptops-TDE.tdej", template);
 var template = xdmp.toJSON(
     {
         "template":{
-            "context":"/televisions/television",
+            "context":"/houses/house",
             "rows":[
                 {
                     "schemaName":"graphql",
-                    "viewName":"Televisions",
+                    "viewName":"Houses",
                     "columns":[
                         {
                             "name":"id",
@@ -143,21 +143,15 @@ var template = xdmp.toJSON(
                             "val":"ownerId"
                         },
                         {
-                            "name":"model",
+                            "name":"number",
                             "scalarType":"string",
-                            "val":"model",
+                            "val":"number",
                             "nullable": true
                         },
                         {
-                            "name":"screenSize",
+                            "name":"street",
                             "scalarType":"string",
-                            "val":"screenSize",
-                            "nullable": true
-                        },
-                        {
-                            "name":"year",
-                            "scalarType":"string",
-                            "val":"year",
+                            "val":"street",
                             "nullable": true
                         }
                     ]
@@ -166,9 +160,43 @@ var template = xdmp.toJSON(
         }
     }
 );
-tde.templateInsert("/templates/televisions-TDE.tdej", template);
+tde.templateInsert("/templates/houses-TDE.tdej", template);
+
+var template = xdmp.toJSON(
+    {
+        "template":{
+            "context":"/rooms/room",
+            "rows":[
+                {
+                    "schemaName":"graphql",
+                    "viewName":"Rooms",
+                    "columns":[
+                        {
+                            "name":"id",
+                            "scalarType":"integer",
+                            "val":"id"
+                        },
+                        {
+                            "name":"houseId",
+                            "scalarType":"integer",
+                            "val":"houseId"
+                        },
+                        {
+                            "name":"type",
+                            "scalarType":"string",
+                            "val":"type",
+                            "nullable": true
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+);
+tde.templateInsert("/templates/rooms-TDE.tdej", template);
 
 test.loadTestFile("humans.xml", xdmp.database(), "/humans.xml");
 test.loadTestFile("cars.xml", xdmp.database(), "/cars.xml");
 test.loadTestFile("laptops.xml", xdmp.database(), "/laptops.xml");
-test.loadTestFile("televisions.xml", xdmp.database(), "/televisions.xml");
+test.loadTestFile("houses.xml", xdmp.database(), "/houses.xml");
+test.loadTestFile("rooms.xml", xdmp.database(), "/rooms.xml");
