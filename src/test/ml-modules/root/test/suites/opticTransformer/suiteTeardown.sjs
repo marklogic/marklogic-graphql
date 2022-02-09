@@ -9,7 +9,27 @@ function test29197(uri) {
         delete: function docDelete() { declareUpdate(); xdmp.documentDelete(uri); }
     };
 };
-const testInvoke = test29197('/templates/humans-TDE.tdej');
+let testInvoke = test29197('/templates/humans-TDE.tdej');
+xdmp.invokeFunction(
+    testInvoke.delete,
+    {database:xdmp.schemaDatabase()}
+);
+testInvoke = test29197('/templates/cars-TDE.tdej');
+xdmp.invokeFunction(
+    testInvoke.delete,
+    {database:xdmp.schemaDatabase()}
+);
+testInvoke = test29197('/templates/laptops-TDE.tdej');
+xdmp.invokeFunction(
+    testInvoke.delete,
+    {database:xdmp.schemaDatabase()}
+);
+testInvoke = test29197('/templates/houses-TDE.tdej');
+xdmp.invokeFunction(
+    testInvoke.delete,
+    {database:xdmp.schemaDatabase()}
+);
+testInvoke = test29197('/templates/rooms-TDE.tdej');
 xdmp.invokeFunction(
     testInvoke.delete,
     {database:xdmp.schemaDatabase()}
