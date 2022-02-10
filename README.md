@@ -12,11 +12,12 @@ The parser used is the parser included in the JavaScript reference implementatio
 2. Wait for http://localhost:8001/ to permit login with admin/admin
 3. Deploy the AppServer, REST extension, and code.
 >`./gradlew mlDeploy`
-4. Test the endpoint using curl.
->`curl --digest --user admin:admin -X POST -H "Content-type: application/txt" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8003/LATEST/resources/graphql`
-5. Go to http://localhost:8004/test/ and run the tests.
+4. Go to http://localhost:8004/test/ and run the tests.
+- Run the tests without suite clean up, by ensuring "Run Teardown after each suite" is NOT checked.
+- This will make it so the following curl commands return data.
+5. Test the endpoint using curl.
+>`curl --digest --user admin:admin -X POST -H "Content-type: application/txt" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8004/LATEST/resources/graphql`
+7. You can also test the endpoint by running the bash script, sampleGraphqlQuery.sh
 
 ## Future Work
-1. Transform the GraphQL AST into an Optic AST.
-2. Use the Optic AST to run an Optic query in MarkLogic.
-3. Transform the Optic query results into GraphQL results and return those results to the caller.
+1. Currently working on nested joins.
