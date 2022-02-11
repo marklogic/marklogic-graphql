@@ -16,13 +16,8 @@ const assertions = [];
 // Given a query with the query keyword and query name
 // When the parse is called
 let response = transformGraphqlIntoOpticPlan(simpleGraphQlJoinQueryString);
-// Then the returned Optic DSL is what is expected.
 console.log("expectedOpticPlanExport:\n" + JSON.stringify(expectedOpticPlanExport));
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
-assertions.push(
-    test.assertTrue(deepEqual(expectedOpticPlanExport,response.opticPlan.export()),
-        "The resulting Optic Plan does not match the expected Optic Plan")
-)
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);

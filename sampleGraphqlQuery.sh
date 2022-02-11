@@ -33,3 +33,9 @@ printf "Query: $query\n"
 echo $query > command.txt
 result=$(curl --digest --user admin:admin -s -X POST -H "Content-type: application/graphql" -d@./command.txt http://localhost:8004/LATEST/resources/graphql)
 printf "Result: $result\n\n\n"
+
+query="query nestedJoin { Humans { id name height Houses { ownerId number street Rooms { houseId type } id } id } }"
+printf "Query: $query\n"
+echo $query > command.txt
+result=$(curl --digest --user admin:admin -s -X POST -H "Content-type: application/graphql" -d@./command.txt http://localhost:8004/LATEST/resources/graphql)
+printf "Result: $result\n\n\n"

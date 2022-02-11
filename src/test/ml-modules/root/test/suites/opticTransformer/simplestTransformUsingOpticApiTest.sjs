@@ -18,13 +18,8 @@ const assertions = [];
 let simpleGraphQlQueryString = `query someQuery { Humans { name height } }`;
 // When the parse is called
 let response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
-// Then the returned Optic DSL is what is expected.
 console.log("expectedOpticPlanExport:\n" + JSON.stringify(expectedOpticPlanExport));
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
-assertions.push(
-   test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
-        "The resulting Optic Plan does not match the expected Optic Plan")
-)
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);
@@ -41,11 +36,6 @@ assertions.push(
 simpleGraphQlQueryString = `{ Humans { name height } }`;
 // When the parse is called
 response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
-// Then the returned Optic DSL is what is expected.
-assertions.push(
-    test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
-        "The resulting Optic Plan does not match the expected Optic Plan")
-)
 // Then the result set of the Optic query is what is expected.
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);
@@ -61,11 +51,6 @@ assertions.push(
 simpleGraphQlQueryString = `query { Humans { name height } }`;
 // When the parse is called
 response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
-// Then the returned Optic DSL is what is expected.
-assertions.push(
-    test.assertEqual(JSON.stringify(expectedOpticPlanExport), JSON.stringify(response.opticPlan.export()),
-        "The resulting Optic Plan does not match the expected Optic Plan")
-)
 // Then the result set of the Optic query is what is expected.
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);
