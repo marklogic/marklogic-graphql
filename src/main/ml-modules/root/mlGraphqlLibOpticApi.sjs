@@ -83,7 +83,7 @@ function processView(queryField, parentViewName, fromColumnName) {
     viewNodePlan = op.fromView(null, viewName);
     viewNodePlan = addWhereClausesFromArguments(viewNodePlan, queryField.arguments, viewName);
 
-    const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName);
+    const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName, fromColumnName);
     const aggregateColumnNames = [];
     const previousAggregateColumnNames = [];
     for (let i=0; i < fieldInfo.joinViewInfos.length; i++) {
@@ -95,9 +95,15 @@ function processView(queryField, parentViewName, fromColumnName) {
         )
         const groupByViewColumns = [];
         console.log("fieldInfo.nonJoinColumnNameStrings: " + fieldInfo.nonJoinColumnNameStrings);
+
+        for (let j=0; j < fieldInfo.includeInGroupBy.length; j++) {
+            groupByViewColumns.push(op.viewCol(viewName, fieldInfo.includeInGroupBy[j]));
+        }
         for (let j=0; j < fieldInfo.nonJoinColumnNameStrings.length; j++) {
-            if (fieldInfo.nonJoinColumnNameStrings[j] !== currentJoinViewInfo.fromColumnName) {
-                groupByViewColumns.push(op.viewCol(viewName, fieldInfo.nonJoinColumnNameStrings[j]));
+            if (!fieldInfo.includeInGroupBy.includes(fieldInfo.nonJoinColumnNameStrings[j])) {
+                if (fieldInfo.nonJoinColumnNameStrings[j] !== currentJoinViewInfo.fromColumnName) {
+                    groupByViewColumns.push(op.viewCol(viewName, fieldInfo.nonJoinColumnNameStrings[j]));
+                }
             }
         }
         for (let j=0; j < previousAggregateColumnNames.length; j++) {
@@ -110,15 +116,19 @@ function processView(queryField, parentViewName, fromColumnName) {
         previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
     }
 
-    const toColumnName = fieldSelectionSet.selections[0].name.value;
-
-    const jsonColumns = fieldInfo.opColumns;
+    const jsonColumns = [];
+    for (let i=0; i < fieldInfo.nonJoinColumnNameStrings.length; i++) {
+        jsonColumns.push(op.prop(fieldInfo.nonJoinColumnNameStrings[i], op.col(fieldInfo.nonJoinColumnNameStrings[i])));
+    }
     for (let i=0; i < aggregateColumnNames.length; i++) {
         jsonColumns.push(op.prop(aggregateColumnNames[i], op.col(aggregateColumnNames[i])));
     }
     console.log("jsonColumns: " + jsonColumns);
 
-    const selectColumnArray = fromColumnName ? [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] : op.as(viewName, op.jsonObject(jsonColumns))
+    const toColumnName = fieldSelectionSet.selections[0].name.value;
+    const selectColumnArray = fromColumnName ?
+        [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] :
+        op.as(viewName, op.jsonObject(jsonColumns))
     viewNodePlan = viewNodePlan.select(selectColumnArray);
 
     return viewNodePlan;
@@ -133,41 +143,71 @@ function addWhereClausesFromArguments(opticPlan, fieldArguments, viewName) {
     return opticPlan;
 }
 
-function getInformationFromFields(fieldSelectionSet, viewName) {
-    const opColumns = [];
+function getInformationFromFields(fieldSelectionSet, viewName, fromColumnName) {
     const nonJoinColumnNameStrings = [];
+    const includeInGroupBy = [];
     const joinViewInfos = [];
     let numFields = fieldSelectionSet.selections.length;
 
     // Get field information
-    // If the field is a join, drill down.
     for (let i = 0; i < numFields; i++) {
         const columnName = fieldSelectionSet.selections[i].name.value;
         const foreignSelectionSet = fieldSelectionSet.selections[i].selectionSet
+        // If the field is a join, drill down.
         if (foreignSelectionSet) {
-            const fromColumnName = fieldSelectionSet.selections[i+1].name.value;
+            const keyNames = getKeyNames(foreignSelectionSet);
+            let fromColumnName = keyNames.parentJoinColumn;
             const joinField = fieldSelectionSet.selections[i]
             const foreignJoinPlan = processView(joinField, viewName, fromColumnName);
             const joinViewInfo = {
                 "foreignJoinPlan" : foreignJoinPlan,
                 "fromColumnName" : fromColumnName,
-                "toColumnName" : foreignSelectionSet.selections[0].name.value,
+                "toColumnName" : keyNames.childJoinColumn,
                 "joinViewName" : columnName
             }
-//            const joinViewInfo = processJoin(joinField, fromColumnName);
-//            opColumns.push(op.prop(joinViewInfo.joinViewName, op.col(joinViewInfo.joinViewName)));
-//        op.on(op.viewCol(viewName, fieldInfo.joinViewInfos[i].fromColumnName), op.viewCol(fieldInfo.joinViewInfos[i].joinViewName, fieldInfo.joinViewInfos[i].toColumnName))
             joinViewInfos.push(joinViewInfo);
-            i++;
         } else {
-            opColumns.push(op.prop(columnName, op.col(columnName)));
-            nonJoinColumnNameStrings.push(columnName);
+            let includeThisFieldInResults = true;
+            for (let j=0; j < fieldSelectionSet.selections[i].directives.length; j++) {
+                if (fieldSelectionSet.selections[i].directives[j].name.value === "childJoinColumn") {
+                    includeInGroupBy.push(columnName)
+                    includeThisFieldInResults = false;
+                }
+                if (fieldSelectionSet.selections[i].directives[j].name.value === "parentJoinColumn") {
+                    includeThisFieldInResults = false;
+                    break;
+                }
+            }
+            if (includeThisFieldInResults) {
+                nonJoinColumnNameStrings.push(columnName);
+            }
         }
     }
     return {
-        "opColumns" : opColumns,
         "joinViewInfos" : joinViewInfos,
+        "includeInGroupBy" : includeInGroupBy,
         "nonJoinColumnNameStrings" : nonJoinColumnNameStrings
+    }
+}
+
+function getKeyNames(selectionSet) {
+    let parentJoinColumn = null;
+    let childJoinColumn = null;
+    for (let i=0; i < selectionSet.selections.length; i++) {
+        if (selectionSet.selections[i].directives.length > 0) {
+            for (let j=0; j < selectionSet.selections[i].directives.length; j++) {
+                if (selectionSet.selections[i].directives[j].name.value === "parentJoinColumn") {
+                    parentJoinColumn = selectionSet.selections[i].name.value;
+                }
+                if (selectionSet.selections[i].directives[j].name.value === "childJoinColumn") {
+                    childJoinColumn = selectionSet.selections[i].name.value;
+                }
+            }
+        }
+    }
+    return {
+        "childJoinColumn" : childJoinColumn,
+        "parentJoinColumn" : parentJoinColumn
     }
 }
 
