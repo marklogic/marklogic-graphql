@@ -1,10 +1,9 @@
 // An internal GraphQL module (specifically /jsutils/instanceOf.*)
 // is expecting a value for process.env.NODE_ENV
-this.process = { env: { NODE_ENV: 'development'} };
+process = { env: { NODE_ENV: "development"} };
 
-const { parse } = require('/graphql/language/parser');
-const { print } = require('/graphql/language/printer');
-const op = require('/MarkLogic/optic');
+const { parse } = require("/graphql/language/parser");
+const op = require("/MarkLogic/optic.sjs");
 
 const graphqlTraceEvent = "GRAPHQL";
 let errors = [];
@@ -16,33 +15,33 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
 
     try {
         queryDocumentAst = parse(graphQlQueryStr);
-//        fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
+        // fn.trace("GraphQL AST: " + JSON.stringify(queryDocumentAst), graphqlTraceEvent);
     } catch (error) {
-        const errorMessage = "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
+        const errorMessage =
+            "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
         console.error(errorMessage);
         errors.push(errorMessage);
         return {
-            graphqlQuery : graphQlQueryStr,
-            opticPlan : null,
-            errors: errors
-        }
+            "graphqlQuery" : graphQlQueryStr,
+            "opticPlan" : null,
+            "errors": errors
+        };
     }
 
-    if (queryDocumentAst.kind = "Document") {
-        const numDefinitions = queryDocumentAst.definitions.length;
-        for (let d = 0; d < numDefinitions; d++) {
-            if (queryDocumentAst.definitions[d].operation === "query") {
-                opticPlan = processQuery(queryDocumentAst.definitions[d]);
-//                fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
+    if (queryDocumentAst.kind === "Document") {
+        queryDocumentAst.definitions.forEach( function(definition) {
+            if (definition.operation === "query") {
+                opticPlan = processQuery(definition);
+                // fn.trace("transformToPlan=>\n" + JSON.stringify(opticPlan) + "\nEnd transformToPlan", graphqlTraceEvent);
             }
-        }
+        });
     }
 
     return {
-        graphqlQuery : graphQlQueryStr,
-        opticPlan : opticPlan,
-        errors: errors
-    }
+        "graphqlQuery" : graphQlQueryStr,
+        "opticPlan" : opticPlan,
+        "errors": errors
+    };
 }
 
 function processQuery(operationNode) {
@@ -53,7 +52,8 @@ function processQuery(operationNode) {
         return null;
     }
     const viewName = queryField.name.value;
-    opticPlan = opticPlan.groupBy(null, [op.arrayAggregate(op.col(viewName), op.col(viewName), null)])
+    opticPlan = opticPlan.groupBy(null,
+        [op.arrayAggregate(op.col(viewName), op.col(viewName), null)]);
     opticPlan = opticPlan.select(
         op.as(
             "data",
@@ -61,7 +61,7 @@ function processQuery(operationNode) {
                 op.prop(viewName, op.col(viewName))
             ])
         )
-    )
+    );
     return opticPlan;
 }
 
@@ -83,7 +83,7 @@ function processView(queryField, parentViewName, fromColumnName) {
     viewNodePlan = op.fromView(null, viewName);
     viewNodePlan = addWhereClausesFromArguments(viewNodePlan, queryField.arguments, viewName);
 
-    const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName, fromColumnName);
+    const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName);
     const aggregateColumnNames = [];
     const previousAggregateColumnNames = [];
     for (let i=0; i < fieldInfo.joinViewInfos.length; i++) {
@@ -143,7 +143,7 @@ function addWhereClausesFromArguments(opticPlan, fieldArguments, viewName) {
     return opticPlan;
 }
 
-function getInformationFromFields(fieldSelectionSet, viewName, fromColumnName) {
+function getInformationFromFields(fieldSelectionSet, viewName) {
     const nonJoinColumnNameStrings = [];
     const includeInGroupBy = [];
     const joinViewInfos = [];
