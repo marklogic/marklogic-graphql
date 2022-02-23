@@ -34,12 +34,3 @@ xdmp.invokeFunction(
     testInvoke.delete,
     {database:xdmp.schemaDatabase()}
 );
-
-
-// Remove extra schemas and views
-const view = require('/MarkLogic/views');
-
-view.remove("Primary", "Names");
-view.remove("Secondary", "Names");
-view.schemaRemove("Primary");
-view.schemaRemove("Secondary");

@@ -67,8 +67,6 @@ function processQuery(operationNode) {
 
 // In this case, a queryField is a Field with defined SelectionSet
 function processView(queryField, parentViewName, fromColumnName) {
-    console.log("processView");
-    console.log("parentViewName: " + parentViewName);
     const viewName = queryField.name.value;
     let viewNodePlan = null;
 
@@ -80,7 +78,8 @@ function processView(queryField, parentViewName, fromColumnName) {
         return false;
     }
 
-    viewNodePlan = op.fromView(null, viewName);
+    const schemaName = extractSchemaNameFromViewDirective(queryField.directives);
+    viewNodePlan = op.fromView(schemaName, viewName);
     viewNodePlan = addWhereClausesFromArguments(viewNodePlan, queryField.arguments, viewName);
 
     const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName);
@@ -123,7 +122,6 @@ function processView(queryField, parentViewName, fromColumnName) {
     for (let i=0; i < aggregateColumnNames.length; i++) {
         jsonColumns.push(op.prop(aggregateColumnNames[i], op.col(aggregateColumnNames[i])));
     }
-    console.log("jsonColumns: " + jsonColumns);
 
     const toColumnName = fieldSelectionSet.selections[0].name.value;
     const selectColumnArray = fromColumnName ?
@@ -132,6 +130,20 @@ function processView(queryField, parentViewName, fromColumnName) {
     viewNodePlan = viewNodePlan.select(selectColumnArray);
 
     return viewNodePlan;
+}
+
+function extractSchemaNameFromViewDirective(directives) {
+    let schemaName = null;
+    directives.forEach( function(directive) {
+        if (directive.name.value === "Schema") {
+            directive.arguments.forEach( function(argument) {
+                if (argument.name.value === "name") {
+                    schemaName = argument.value.value;
+                }
+            });
+        }
+    });
+    return schemaName;
 }
 
 function addWhereClausesFromArguments(opticPlan, fieldArguments, viewName) {
