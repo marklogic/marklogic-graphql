@@ -215,7 +215,18 @@ function executeOpticPlan(opticPlan) {
     const planObj = opticPlan.export();
     fn.trace("Plan Export\n" + op.toSource(planObj), graphqlTraceEvent);
 
-    let result = opticPlan.result();
+    let result = null;
+    try {
+        result = opticPlan.result();
+    }
+    catch (err) {
+        errors.push(err.toString());
+        return {
+            "opticPlan" : opticPlan,
+            "result" : null,
+            "errors": errors
+        };
+    }
     fn.trace("Optic Plan Result\n" + result + "Optic Plan Result Finished", graphqlTraceEvent);
 
     const nb = new NodeBuilder();
