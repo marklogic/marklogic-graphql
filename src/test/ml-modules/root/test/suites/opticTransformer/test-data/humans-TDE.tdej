@@ -22,6 +22,12 @@
             "scalarType":"long",
             "val":"height",
             "nullable": true
+          },
+          {
+            "name":"hair",
+            "scalarType":"string",
+            "val":"hair",
+            "nullable": true
           }
         ]
       }

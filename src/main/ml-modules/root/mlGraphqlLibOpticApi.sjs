@@ -98,13 +98,21 @@ function processView(queryField, parentViewName, fromColumnName) {
     });
 
     const jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
-    const toColumnName = fieldSelectionSet.selections[0].name.value;
-    const selectColumnArray = (
-        fromColumnName ?
-        [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] :
-        op.as(viewName, op.jsonObject(jsonColumns))
-    );
-    viewNodePlan = viewNodePlan.select(selectColumnArray);
+    if (fieldInfo.groupByAggregations.length > 0) {
+        const groupBySelectionName = fieldInfo.groupByAggregations[0];
+        viewNodePlan = viewNodePlan.groupBy(groupBySelectionName);
+//        viewNodePlan = viewNodePlan.groupBy(fieldInfo.groupByAggregations[0], op.as(viewName, op.jsonObject(jsonColumns)));
+        viewNodePlan = viewNodePlan.select(op.as(viewName, op.jsonObject(op.prop(groupBySelectionName, op.col(groupBySelectionName)))));
+// Need This =>    .select([op.as('Humans', op.jsonObject([op.prop('hair', op.col('hair'))]))], null)
+    } else {
+        const toColumnName = fieldSelectionSet.selections[0].name.value;
+        const selectColumnArray = (
+            fromColumnName ?
+                [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] :
+                op.as(viewName, op.jsonObject(jsonColumns))
+        );
+        viewNodePlan = viewNodePlan.select(selectColumnArray);
+    }
 
     return viewNodePlan;
 }
@@ -166,6 +174,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     const nonJoinColumnNameStrings = [];
     const includeInGroupBy = [];
     const joinViewInfos = [];
+    const groupByAggregations = [];
 
     // Get field information
     fieldSelectionSet.selections.forEach(function(selection) {
@@ -193,6 +202,10 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                 if (directive.name.value === "parentJoinColumn") {
                     includeThisFieldInResults = false;
                 }
+                if (directive.name.value === "GroupBy") {
+                    includeThisFieldInResults = false;
+                    groupByAggregations.push(columnName);
+                }
             });
             if (includeThisFieldInResults) {
                 nonJoinColumnNameStrings.push(columnName);
@@ -202,7 +215,8 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     return {
         "joinViewInfos" : joinViewInfos,
         "includeInGroupBy" : includeInGroupBy,
-        "nonJoinColumnNameStrings" : nonJoinColumnNameStrings
+        "nonJoinColumnNameStrings" : nonJoinColumnNameStrings,
+        "groupByAggregations" : groupByAggregations
     };
 }
 

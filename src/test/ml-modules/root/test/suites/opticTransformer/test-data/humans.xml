@@ -3,30 +3,36 @@
         <id>1</id>
         <name>John</name>
         <height>70</height>
+        <hair>Black</hair>
     </human>
     <human>
         <id>2</id>
         <name>Jim</name>
         <height>75</height>
+        <hair>Brown</hair>
     </human>
     <human>
         <id>3</id>
         <name>Joe</name>
         <height>80</height>
+        <hair>Brown</hair>
     </human>
     <human>
         <id>1000</id>
         <name>Jane</name>
         <height>65</height>
+        <hair>Blond</hair>
     </human>
     <human>
         <id>1001</id>
         <name>Jenny</name>
         <height>65</height>
+        <hair>Brown</hair>
     </human>
     <human>
         <id>1002</id>
         <name>Joan</name>
         <height>65</height>
+        <hair>Black</hair>
     </human>
 </humans>
