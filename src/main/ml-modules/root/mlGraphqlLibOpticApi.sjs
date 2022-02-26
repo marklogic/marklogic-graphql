@@ -97,22 +97,21 @@ function processView(queryField, parentViewName, fromColumnName) {
         previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
     });
 
-    const jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
-    if (fieldInfo.groupByAggregations.length > 0) {
-        const groupBySelectionName = fieldInfo.groupByAggregations[0];
-        viewNodePlan = viewNodePlan.groupBy(groupBySelectionName);
-//        viewNodePlan = viewNodePlan.groupBy(fieldInfo.groupByAggregations[0], op.as(viewName, op.jsonObject(jsonColumns)));
-        viewNodePlan = viewNodePlan.select(op.as(viewName, op.jsonObject(op.prop(groupBySelectionName, op.col(groupBySelectionName)))));
-// Need This =>    .select([op.as('Humans', op.jsonObject([op.prop('hair', op.col('hair'))]))], null)
-    } else {
-        const toColumnName = fieldSelectionSet.selections[0].name.value;
-        const selectColumnArray = (
-            fromColumnName ?
-                [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] :
-                op.as(viewName, op.jsonObject(jsonColumns))
-        );
-        viewNodePlan = viewNodePlan.select(selectColumnArray);
-    }
+    let jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
+    fieldInfo.groupByColumns.forEach(function(groupByColumn) {
+        viewNodePlan = viewNodePlan.groupBy(groupByColumn, fieldInfo.nonJoinColumnNameStrings);
+        aggregateColumnNames.push(groupByColumn);
+    });
+
+    jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
+
+    const toColumnName = fieldSelectionSet.selections[0].name.value;
+    const selectColumnArray = (
+        fromColumnName ?
+            [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] :
+            op.as(viewName, op.jsonObject(jsonColumns))
+    );
+    viewNodePlan = viewNodePlan.select(selectColumnArray);
 
     return viewNodePlan;
 }
@@ -174,7 +173,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     const nonJoinColumnNameStrings = [];
     const includeInGroupBy = [];
     const joinViewInfos = [];
-    const groupByAggregations = [];
+    const groupByColumns = [];
 
     // Get field information
     fieldSelectionSet.selections.forEach(function(selection) {
@@ -204,7 +203,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                 }
                 if (directive.name.value === "GroupBy") {
                     includeThisFieldInResults = false;
-                    groupByAggregations.push(columnName);
+                    groupByColumns.push(columnName);
                 }
             });
             if (includeThisFieldInResults) {
@@ -216,7 +215,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
         "joinViewInfos" : joinViewInfos,
         "includeInGroupBy" : includeInGroupBy,
         "nonJoinColumnNameStrings" : nonJoinColumnNameStrings,
-        "groupByAggregations" : groupByAggregations
+        "groupByColumns" : groupByColumns
     };
 }
 

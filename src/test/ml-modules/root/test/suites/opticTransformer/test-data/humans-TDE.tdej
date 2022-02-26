@@ -24,6 +24,12 @@
             "nullable": true
           },
           {
+            "name":"weight",
+            "scalarType":"long",
+            "val":"weight",
+            "nullable": true
+          },
+          {
             "name":"hair",
             "scalarType":"string",
             "val":"hair",

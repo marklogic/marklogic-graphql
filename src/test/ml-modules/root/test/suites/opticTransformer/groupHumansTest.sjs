@@ -5,11 +5,12 @@ const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLib
 const {deepEqual} = require('/testHelpers');
 const op = require('/MarkLogic/optic');
 
+
+// Test #1
 const nb = new NodeBuilder();
 nb.addNode({"data":{"Humans":[{"hair":"Black"}, {"hair":"Blond"}, {"hair":"Brown"}]}});
 const expectedResults = nb.toNode();
 const assertions = [];
-
 
 // Given a simple query with a single Field that also has the @GroupBy directive
 let countGraphQlQueryString = `query someQuery { Humans { hair @GroupBy } }`;
