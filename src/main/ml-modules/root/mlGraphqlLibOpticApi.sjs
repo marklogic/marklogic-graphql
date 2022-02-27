@@ -97,14 +97,16 @@ function processView(queryField, parentViewName, fromColumnName) {
         previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
     });
 
-    let jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
+    console.log("fieldInfo.nonJoinColumnNameStrings: " + fieldInfo.nonJoinColumnNameStrings);
     fieldInfo.groupByColumns.forEach(function(groupByColumn) {
-        viewNodePlan = viewNodePlan.groupBy(groupByColumn, fieldInfo.nonJoinColumnNameStrings);
+        viewNodePlan = viewNodePlan.groupBy(groupByColumn, fieldInfo.groupByAggregateColumns);
         aggregateColumnNames.push(groupByColumn);
     });
+    fieldInfo.groupByAggregateColumnNames.forEach(function(aggregateColumnName) {
+        aggregateColumnNames.push(aggregateColumnName);
+    });
 
-    jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
-
+    const jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
     const toColumnName = fieldSelectionSet.selections[0].name.value;
     const selectColumnArray = (
         fromColumnName ?
@@ -174,6 +176,8 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     const includeInGroupBy = [];
     const joinViewInfos = [];
     const groupByColumns = [];
+    const groupByAggregateColumns = [];
+    const groupByAggregateColumnNames = [];
 
     // Get field information
     fieldSelectionSet.selections.forEach(function(selection) {
@@ -193,6 +197,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
             joinViewInfos.push(joinViewInfo);
         } else {
             let includeThisFieldInResults = true;
+            let aggregateDirectiveFound = false;
             selection.directives.forEach(function(directive) {
                 if (directive.name.value === "childJoinColumn") {
                     includeInGroupBy.push(columnName);
@@ -203,9 +208,19 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                 }
                 if (directive.name.value === "GroupBy") {
                     includeThisFieldInResults = false;
+                    aggregateDirectiveFound = true;
                     groupByColumns.push(columnName);
                 }
+                if (directive.name.value === "Count") {
+                    includeThisFieldInResults = false;
+                    aggregateDirectiveFound = true;
+                    groupByAggregateColumns.push(op.count(columnName));
+                    groupByAggregateColumnNames.push(columnName);
+                }
             });
+            if (!aggregateDirectiveFound) {
+                groupByAggregateColumns.push(op.col(columnName));
+            }
             if (includeThisFieldInResults) {
                 nonJoinColumnNameStrings.push(columnName);
             }
@@ -215,7 +230,9 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
         "joinViewInfos" : joinViewInfos,
         "includeInGroupBy" : includeInGroupBy,
         "nonJoinColumnNameStrings" : nonJoinColumnNameStrings,
-        "groupByColumns" : groupByColumns
+        "groupByColumns" : groupByColumns,
+        "groupByAggregateColumns" : groupByAggregateColumns,
+        "groupByAggregateColumnNames" : groupByAggregateColumnNames
     };
 }
 
