@@ -1,6 +1,9 @@
+"use strict";
+/* global NodeBuilder, Sequence */ // For ESLint
+
 // An internal GraphQL module (specifically /jsutils/instanceOf.*)
 // is expecting a value for process.env.NODE_ENV
-process = { env: { NODE_ENV: "development"} };
+this.process = { env: { NODE_ENV: "development"} };
 
 const { parse } = require("/graphql/language/parser");
 const op = require("/MarkLogic/optic.sjs");
@@ -214,8 +217,8 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                 if (directive.name.value === "Count") {
                     includeThisFieldInResults = false;
                     aggregateDirectiveFound = true;
-                    groupByAggregateColumns.push(op.count(columnName));
-                    groupByAggregateColumnNames.push(columnName);
+                    groupByAggregateColumns.push(op.count(columnName+"_count", columnName));
+                    groupByAggregateColumnNames.push(columnName+"_count");
                 }
             });
             if (!aggregateDirectiveFound) {
