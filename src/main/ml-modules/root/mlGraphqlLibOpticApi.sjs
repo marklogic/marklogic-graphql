@@ -100,7 +100,6 @@ function processView(queryField, parentViewName, fromColumnName) {
         previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
     });
 
-    console.log("fieldInfo.nonJoinColumnNameStrings: " + fieldInfo.nonJoinColumnNameStrings);
     fieldInfo.groupByColumns.forEach(function(groupByColumn) {
         viewNodePlan = viewNodePlan.groupBy(groupByColumn, fieldInfo.groupByAggregateColumns);
         aggregateColumnNames.push(groupByColumn);
@@ -219,6 +218,12 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                     aggregateDirectiveFound = true;
                     groupByAggregateColumns.push(op.count(columnName+"_count", columnName));
                     groupByAggregateColumnNames.push(columnName+"_count");
+                }
+                if (directive.name.value === "Sum") {
+                    includeThisFieldInResults = false;
+                    aggregateDirectiveFound = true;
+                    groupByAggregateColumns.push(op.sum(columnName+"_sum", columnName));
+                    groupByAggregateColumnNames.push(columnName+"_sum");
                 }
             });
             if (!aggregateDirectiveFound) {
