@@ -5,6 +5,7 @@
   "dependencies": {},
   "keywords": [],
   "devDependencies": {
+    "eslint": "^8.10.0",
     "graphql": "^16.2.0"
   }
 }
