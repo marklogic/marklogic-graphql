@@ -10,7 +10,7 @@ function deleteDocumentInOtherDatabaseFunction(uri) {
     };
 }
 
-const dataFiles = ["humans", "cars", "laptops", "houses", "rooms"];
+const dataFiles = ["humans", "cars", "laptops", "houses", "rooms", "drinks"];
 // Delete the TDE templates from the schemas database
 dataFiles.forEach(function(template) {
     let testInvoke = deleteDocumentInOtherDatabaseFunction("/templates/" + template + "-TDE.tdej");

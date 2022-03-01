@@ -3,10 +3,10 @@ declareUpdate();
 
 const test = require("/test/test-helper.xqy");
 const tde = require("/MarkLogic/tde.xqy");
-const admin = require('/MarkLogic/admin.xqy');
-const view = require('/MarkLogic/views');
+const admin = require("/MarkLogic/admin.xqy");
+const view = require("/MarkLogic/views");
 
-const dataFiles = ["humans", "cars", "laptops", "houses", "rooms"];
+const dataFiles = ["humans", "cars", "laptops", "houses", "rooms", "drinks"];
 // Load the TDE templates
 dataFiles.forEach(function(template) {
     let templateJson = xdmp.toJSON(test.getTestFile(template + "-TDE.tdej"));
@@ -99,7 +99,7 @@ function createViewsIfTheyDoNotExist() {
         if (fn.exists(view.xpath("./view:view-name[text() = 'names']", {"view":"http://marklogic.com/xdmp/view"}))) {
             viewExists = true;
         }
-    })
+    });
     if (!viewExists) {
         view.create(
             "secondary",
@@ -107,7 +107,7 @@ function createViewsIfTheyDoNotExist() {
             view.elementViewScope(xs.QName("human")),
             (
                 view.column("uri", cts.uriReference()),
-                    view.column("height", cts.elementReference(xs.QName("height"), ("nullable")))
+                view.column("height", cts.elementReference(xs.QName("height"), ("nullable")))
             ),
             []
         );
