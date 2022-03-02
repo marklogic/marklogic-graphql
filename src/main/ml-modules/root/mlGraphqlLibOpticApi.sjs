@@ -228,8 +228,8 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                 if (directive.name.value === "Average") {
                     includeThisFieldInResults = false;
                     aggregateDirectiveFound = true;
-                    groupByAggregateColumns.push(op.avg(columnName+"_sum", columnName));
-                    groupByAggregateColumnNames.push(columnName+"_sum");
+                    groupByAggregateColumns.push(op.avg(columnName+"_average", columnName));
+                    groupByAggregateColumnNames.push(columnName+"_average");
                 }
             });
             if (!aggregateDirectiveFound) {
