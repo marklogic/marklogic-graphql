@@ -1,19 +1,23 @@
-// Customized and extended the version at https://dmitripavlutin.com/how-to-compare-objects-in-javascript/
+// Based on https://dmitripavlutin.com/how-to-compare-objects-in-javascript/
 // Under the CC license (https://creativecommons.org/licenses/by/4.0/)
+// Customized and extended specifically to support testing the return values from mlGraphqlLibOpticApi.sjs
 
-// I don't think this comparison is quite right yet.
-// I think that deepArrayEqual([A, B, B], [A, A, B]) will return true
 function deepArrayEqual(array1, array2, ignoreKeys) {
     if (array1.length !== array2.length) {
         return false;
     }
+    const usedIndexesFromArray2 = [];
     for (let i = 0; i<array1.length; i++) {
         const element1 = array1[i];
         let foundMatch = false;
         for (let j = 0; j<array2.length; j++) {
-            const element2 = array2[j];
-            if (deepEqual(element1, element2, ignoreKeys)) {
-                foundMatch = true;
+            if (!usedIndexesFromArray2.includes(j)) {
+                const element2 = array2[j];
+                if (deepEqual(element1, element2, ignoreKeys)) {
+                    foundMatch = true;
+                    usedIndexesFromArray2.push(j);
+                    j = array2.length;
+                }
             }
         }
         if (!foundMatch) {
