@@ -1,7 +1,10 @@
-// Take from https://dmitripavlutin.com/how-to-compare-objects-in-javascript/
+// Customized and extended the version at https://dmitripavlutin.com/how-to-compare-objects-in-javascript/
 // Under the CC license (https://creativecommons.org/licenses/by/4.0/)
+
+// I don't think this comparison is quite right yet.
+// I think that deepArrayEqual([A, B, B], [A, A, B]) will return true
 function deepArrayEqual(array1, array2, ignoreKeys) {
-    if (array1.length != array2.length) {
+    if (array1.length !== array2.length) {
         return false;
     }
     for (let i = 0; i<array1.length; i++) {

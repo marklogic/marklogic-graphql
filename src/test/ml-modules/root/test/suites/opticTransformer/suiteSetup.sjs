@@ -1,4 +1,7 @@
-// This file would be ran multiple times, once before each test is ran
+// This test would be run once, before any tests in the suite has been run
+"use strict";
+/* global declareUpdate, xdmp, xs, cts */ // For ESLint
+
 declareUpdate();
 
 const test = require("/test/test-helper.xqy");

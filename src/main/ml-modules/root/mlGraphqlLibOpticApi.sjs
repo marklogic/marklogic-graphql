@@ -225,6 +225,12 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                     groupByAggregateColumns.push(op.sum(columnName+"_sum", columnName));
                     groupByAggregateColumnNames.push(columnName+"_sum");
                 }
+                if (directive.name.value === "Average") {
+                    includeThisFieldInResults = false;
+                    aggregateDirectiveFound = true;
+                    groupByAggregateColumns.push(op.avg(columnName+"_sum", columnName));
+                    groupByAggregateColumnNames.push(columnName+"_sum");
+                }
             });
             if (!aggregateDirectiveFound) {
                 groupByAggregateColumns.push(op.col(columnName));

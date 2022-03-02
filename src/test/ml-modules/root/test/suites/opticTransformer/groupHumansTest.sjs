@@ -68,7 +68,7 @@ assertions.push(
 );
 
 
-// Test #4, @GroupBy and @Count and NonAggregate
+// Test #4, @GroupBy and @Count and @Sum
 nb = new NodeBuilder();
 nb.addNode({"data":{"Humans":[{"weight_sum":325, "hair":"Black", "name_count":2}, {"weight_sum":169, "hair":"Blond", "name_count":1}, {"weight_sum":461, "hair":"Brown", "name_count":3}]}});
 const test4ExpectedResults = nb.toNode();
@@ -87,4 +87,25 @@ assertions.push(
         "The resulting data set does not match the expected results.")
 );
 
+
+/*
+// Test #5, @GroupBy and @Count, @Sum, and @Average
+nb = new NodeBuilder();
+nb.addNode({"data":{"Humans":[{"weight_sum":325, "hair":"Black", "name_count":2}, {"weight_sum":169, "hair":"Blond", "name_count":1}, {"weight_sum":461, "hair":"Brown", "name_count":3}]}});
+const test5ExpectedResults = nb.toNode();
+
+// Given a query with a single Field that also has the @GroupBy directive and aggregate directives
+countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count weight @Sum weight @Average } }";
+// When the parse and execute are called
+response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
+console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+// Then the result set of the Optic query is what is expected.
+actualResult = executeOpticPlan(response.opticPlan);
+console.log("Expected Result=>\n" + test5ExpectedResults);
+console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+assertions.push(
+    test.assertTrue(deepEqual(test5ExpectedResults, actualResult),
+        "The resulting data set does not match the expected results.")
+);
+*/
 assertions;

@@ -1,1 +1,1 @@
-// This file would be ran multiple times, once before each test is ran
+// This file would be run multiple times, once before each test is run

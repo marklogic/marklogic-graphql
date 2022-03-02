@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
+/* global NodeBuilder */ // For ESLint
 
 const test = require("/test/test-helper.xqy");
-const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require('/mlGraphqlLibOpticApi');
-const {deepEqual} = require('/testHelpers');
-const op = require('/MarkLogic/optic');
+const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require("/mlGraphqlLibOpticApi");
+const {deepEqual} = require("/testHelpers");
 const assertions = [];
 
 const primaryNB = new NodeBuilder();
@@ -20,7 +20,7 @@ assertions.push(
 
 
 // Given multiple views with the same name (in different schemas)
-let graphQlQueryStringWithDuplicatedViewAndSchemaDirective = `query someQuery { Names @Schema(name: "Primary") { name } }`;
+let graphQlQueryStringWithDuplicatedViewAndSchemaDirective = "query someQuery { Names @Schema(name: \"Primary\") { name } }";
 // When the query uses an ambiguous View and specifies a schema
 let response = transformGraphqlIntoOpticPlan(graphQlQueryStringWithDuplicatedViewAndSchemaDirective);
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
@@ -34,7 +34,7 @@ assertions.push(
 );
 
 // Given multiple views with the same name (in different schemas)
-graphQlQueryStringWithDuplicatedViewAndSchemaDirective = `query someQuery { Names @Schema(name: "Secondary") { height } }`;
+graphQlQueryStringWithDuplicatedViewAndSchemaDirective = "query someQuery { Names @Schema(name: \"Secondary\") { height } }";
 // When the query uses an ambiguous View and specifies the secondary schema
 response = transformGraphqlIntoOpticPlan(graphQlQueryStringWithDuplicatedViewAndSchemaDirective);
 console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
