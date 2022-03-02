@@ -108,7 +108,7 @@ assertions.push(
 );
 
 
-/*
+/*  I need to implement the GraphQL alias capability before I can do this test.
 // Test #6, @GroupBy and @Count, @Sum, and @Average
 nb = new NodeBuilder();
 nb.addNode({"data":{"Humans":[{"weight_sum":325, "hair":"Black", "name_count":2}, {"weight_sum":169, "hair":"Blond", "name_count":1}, {"weight_sum":461, "hair":"Brown", "name_count":3}]}});

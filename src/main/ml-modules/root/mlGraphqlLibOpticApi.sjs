@@ -1,7 +1,7 @@
 "use strict";
 /* global NodeBuilder, Sequence */ // For ESLint
 
-// An internal GraphQL module (specifically /jsutils/instanceOf.*)
+// An internal GraphQL-JS module (specifically /jsutils/instanceOf.*)
 // is expecting a value for process.env.NODE_ENV
 this.process = { env: { NODE_ENV: "development"} };
 
@@ -24,11 +24,7 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
             "Error parsing the GraphQL Query string: \n" + graphQlQueryStr;
         console.error(errorMessage);
         errors.push(errorMessage);
-        return {
-            "graphqlQuery" : graphQlQueryStr,
-            "opticPlan" : null,
-            "errors": errors
-        };
+        return buildNonResultObject(graphQlQueryStr, opticPlan, errors);
     }
 
     if (queryDocumentAst.kind === "Document") {
@@ -39,12 +35,7 @@ function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
             }
         });
     }
-
-    return {
-        "graphqlQuery" : graphQlQueryStr,
-        "opticPlan" : opticPlan,
-        "errors": errors
-    };
+    return buildNonResultObject(graphQlQueryStr, opticPlan, errors);
 }
 
 function processQuery(operationNode) {
@@ -54,7 +45,11 @@ function processQuery(operationNode) {
     if (!opticPlan) {
         return null;
     }
-    const viewName = queryField.name.value;
+    opticPlan = wrapQueryPlanInJsonDataObject(opticPlan, queryField.name.value);
+    return opticPlan;
+}
+
+function wrapQueryPlanInJsonDataObject(opticPlan, viewName) {
     opticPlan = opticPlan.groupBy(null,
         [op.arrayAggregate(op.col(viewName), op.col(viewName), null)]);
     opticPlan = opticPlan.select(
@@ -71,7 +66,7 @@ function processQuery(operationNode) {
 // In this case, a queryField is a Field with defined SelectionSet
 function processView(queryField, parentViewName, fromColumnName) {
     const viewName = queryField.name.value;
-    let viewNodePlan = null;
+    let viewOpticPlan = null;
 
     const fieldSelectionSet = queryField.selectionSet;
     if (!fieldSelectionSet) {
@@ -82,42 +77,61 @@ function processView(queryField, parentViewName, fromColumnName) {
     }
 
     const schemaName = extractSchemaNameFromViewDirective(queryField.directives);
-    viewNodePlan = op.fromView(schemaName, viewName);
-    viewNodePlan = addWhereClausesFromArguments(viewNodePlan, queryField.arguments, viewName);
-
+    viewOpticPlan = op.fromView(schemaName, viewName);
+    viewOpticPlan = addWhereClausesFromArguments(viewOpticPlan, queryField.arguments, viewName);
     const fieldInfo = getInformationFromFields(fieldSelectionSet, viewName);
-    const aggregateColumnNames = [];
-    const previousAggregateColumnNames = [];
-    fieldInfo.joinViewInfos.forEach(function(currentJoinViewInfo) {
-        viewNodePlan = viewNodePlan.joinLeftOuter(
-            currentJoinViewInfo.foreignJoinPlan,
-            op.on(op.viewCol(viewName, currentJoinViewInfo.fromColumnName), op.viewCol(currentJoinViewInfo.joinViewName, currentJoinViewInfo.toColumnName))
-        );
-        const groupByViewColumns = buildGroupByViewColumns(viewName, fieldInfo, previousAggregateColumnNames, currentJoinViewInfo);
+    viewOpticPlan = addJoinsToViewPlan(viewOpticPlan, viewName, fieldInfo);
+    viewOpticPlan = addGroupByToViewPlan(viewOpticPlan, fieldInfo);
 
-        viewNodePlan = viewNodePlan.groupBy([op.viewCol(viewName, currentJoinViewInfo.fromColumnName)], groupByViewColumns);
-        aggregateColumnNames.push(currentJoinViewInfo.joinViewName);
-        previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
-    });
-
-    fieldInfo.groupByColumns.forEach(function(groupByColumn) {
-        viewNodePlan = viewNodePlan.groupBy(groupByColumn, fieldInfo.groupByAggregateColumns);
-        aggregateColumnNames.push(groupByColumn);
-    });
-    fieldInfo.groupByAggregateColumnNames.forEach(function(aggregateColumnName) {
-        aggregateColumnNames.push(aggregateColumnName);
-    });
-
-    const jsonColumns = buildJsonColumnsList(fieldInfo, aggregateColumnNames);
+    const joinAndAggregateColumnNames = buildListOfJoinAndAggregateColumnNames(fieldInfo);
+    const jsonSelectObjectColumns = buildJsonColumnsList(fieldInfo, joinAndAggregateColumnNames);
     const toColumnName = fieldSelectionSet.selections[0].name.value;
     const selectColumnArray = (
         fromColumnName ?
-            [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonColumns)) ] :
-            op.as(viewName, op.jsonObject(jsonColumns))
+            [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonSelectObjectColumns)) ] :
+            op.as(viewName, op.jsonObject(jsonSelectObjectColumns))
     );
-    viewNodePlan = viewNodePlan.select(selectColumnArray);
+    viewOpticPlan = viewOpticPlan.select(selectColumnArray);
 
-    return viewNodePlan;
+    return viewOpticPlan;
+}
+
+function addGroupByToViewPlan(viewOpticPlan, fieldInfo) {
+    let opticPlanWithGroupBys = viewOpticPlan;
+    fieldInfo.groupByColumns.forEach(function(groupByColumn) {
+        opticPlanWithGroupBys = opticPlanWithGroupBys.groupBy(groupByColumn, fieldInfo.groupByAggregateColumns);
+    });
+    return opticPlanWithGroupBys;
+}
+
+function buildListOfJoinAndAggregateColumnNames(fieldInfo) {
+    const joinAndAggregateColumnNames = [];
+    fieldInfo.joinViewInfos.forEach(function(currentJoinViewInfo) {
+        joinAndAggregateColumnNames.push(currentJoinViewInfo.joinViewName);
+    });
+    fieldInfo.groupByColumns.forEach(function(groupByColumn) {
+        joinAndAggregateColumnNames.push(groupByColumn);
+    });
+    fieldInfo.groupByAggregateColumnNames.forEach(function(aggregateColumnName) {
+        joinAndAggregateColumnNames.push(aggregateColumnName);
+    });
+    return joinAndAggregateColumnNames;
+}
+
+function addJoinsToViewPlan(viewOpticPlan, currentViewName, fieldInfo) {
+    const previousAggregateColumnNames = [];
+    let opticPlanWithJoins = viewOpticPlan;
+    fieldInfo.joinViewInfos.forEach(function(currentJoinViewInfo) {
+        opticPlanWithJoins = opticPlanWithJoins.joinLeftOuter(
+            currentJoinViewInfo.foreignJoinPlan,
+            op.on(op.viewCol(currentViewName, currentJoinViewInfo.fromColumnName), op.viewCol(currentJoinViewInfo.joinViewName, currentJoinViewInfo.toColumnName))
+        );
+        const groupByViewColumns = buildGroupByViewColumns(currentViewName, fieldInfo, previousAggregateColumnNames, currentJoinViewInfo);
+
+        opticPlanWithJoins = opticPlanWithJoins.groupBy([op.viewCol(currentViewName, currentJoinViewInfo.fromColumnName)], groupByViewColumns);
+        previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
+    });
+    return opticPlanWithJoins;
 }
 
 function buildJsonColumnsList(fieldInfo, aggregateColumnNames) {
@@ -281,17 +295,22 @@ function executeOpticPlan(opticPlan) {
     }
     catch (err) {
         errors.push(err.toString());
-        return {
-            "opticPlan" : opticPlan,
-            "result" : null,
-            "errors": errors
-        };
+        return buildNonResultObject(null, opticPlan, errors);
     }
     fn.trace("Optic Plan Result\n" + result + "Optic Plan Result Finished", graphqlTraceEvent);
 
     const nb = new NodeBuilder();
     nb.addNode(Sequence.from(result).toArray()[0]);
     return nb.toNode();
+}
+
+function buildNonResultObject(graphQlQueryStr, opticPlan, errors) {
+    return {
+        "graphqlQuery" : graphQlQueryStr,
+        "opticPlan" : opticPlan,
+        "result" : null,
+        "errors": errors
+    };
 }
 
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
