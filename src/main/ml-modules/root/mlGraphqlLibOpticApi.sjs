@@ -57,10 +57,11 @@ function processQuery(operationNode) {
     fn.trace("OperationDefinition is for a query", graphqlTraceEvent);
     let queryField = operationNode.selectionSet.selections[0];
     let opticPlan = processView(queryField);
+    let viewAlias;
+
     if (!opticPlan) {
         return null;
     }
-    let viewAlias = null;
     if (queryField.alias) {
         viewAlias = queryField.alias.value;
     } else {
@@ -245,8 +246,6 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
             if (selection.alias) {
                 columnAlias = selection.alias.value;
             }
-            console.log("columnName: " + columnName);
-            console.log("columnAlias: " + columnAlias);
             let includeThisFieldInResults = true;
             let aggregateDirectiveFound = false;
             selection.directives.forEach(function(directive) {
@@ -266,8 +265,12 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                     const opticFunction = aggMap[directive.name.value];
                     includeThisFieldInResults = false;
                     aggregateDirectiveFound = true;
-                    groupByAggregateColumns.push(opticFunction.func(columnName+"_"+opticFunction.name, columnName));
-                    groupByAggregateColumnNames.push(columnName+"_"+opticFunction.name);
+                    let columnAlias = columnName+"_"+opticFunction.name;
+                    if (selection.alias) {
+                        columnAlias = selection.alias.value;
+                    }
+                    groupByAggregateColumns.push(opticFunction.func(columnAlias, columnName));
+                    groupByAggregateColumnNames.push(columnAlias);
                 }
             });
 
