@@ -11,6 +11,21 @@ const op = require("/MarkLogic/optic.sjs");
 const graphqlTraceEvent = "GRAPHQL";
 let errors = [];
 
+const aggMap = {
+    "Count" : {
+        "name" : "count",
+        "func" : function (columnAlias, columnName) { return op.count(columnAlias, columnName); }
+    },
+    "Sum" : {
+        "name" : "sum",
+        "func" : function (columnAlias, columnName) { return op.sum(columnAlias, columnName); }
+    },
+    "Average" : {
+        "name" : "average",
+        "func" : function (columnAlias, columnName) { return op.avg(columnAlias, columnName); }
+    }
+};
+
 function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
     let opticPlan = null;
     let queryDocumentAst = null;
@@ -98,8 +113,8 @@ function processView(queryField, parentViewName, fromColumnName) {
 
 function addGroupByToViewPlan(viewOpticPlan, fieldInfo) {
     let opticPlanWithGroupBys = viewOpticPlan;
-    fieldInfo.groupByColumns.forEach(function(groupByColumn) {
-        opticPlanWithGroupBys = opticPlanWithGroupBys.groupBy(groupByColumn, fieldInfo.groupByAggregateColumns);
+    fieldInfo.groupByColumnNames.forEach(function(groupByColumnName) {
+        opticPlanWithGroupBys = opticPlanWithGroupBys.groupBy(groupByColumnName, fieldInfo.groupByAggregateColumns);
     });
     return opticPlanWithGroupBys;
 }
@@ -109,8 +124,8 @@ function buildListOfJoinAndAggregateColumnNames(fieldInfo) {
     fieldInfo.joinViewInfos.forEach(function(currentJoinViewInfo) {
         joinAndAggregateColumnNames.push(currentJoinViewInfo.joinViewName);
     });
-    fieldInfo.groupByColumns.forEach(function(groupByColumn) {
-        joinAndAggregateColumnNames.push(groupByColumn);
+    fieldInfo.groupByColumnNames.forEach(function(groupByColumnName) {
+        joinAndAggregateColumnNames.push(groupByColumnName);
     });
     fieldInfo.groupByAggregateColumnNames.forEach(function(aggregateColumnName) {
         joinAndAggregateColumnNames.push(aggregateColumnName);
@@ -126,9 +141,9 @@ function addJoinsToViewPlan(viewOpticPlan, currentViewName, fieldInfo) {
             currentJoinViewInfo.foreignJoinPlan,
             op.on(op.viewCol(currentViewName, currentJoinViewInfo.fromColumnName), op.viewCol(currentJoinViewInfo.joinViewName, currentJoinViewInfo.toColumnName))
         );
-        const groupByViewColumns = buildGroupByViewColumns(currentViewName, fieldInfo, previousAggregateColumnNames, currentJoinViewInfo);
+        const columnListForGroupByAfterJoin = buildColumnListForGroupByAfterJoin(currentViewName, fieldInfo, previousAggregateColumnNames, currentJoinViewInfo);
 
-        opticPlanWithJoins = opticPlanWithJoins.groupBy([op.viewCol(currentViewName, currentJoinViewInfo.fromColumnName)], groupByViewColumns);
+        opticPlanWithJoins = opticPlanWithJoins.groupBy([op.viewCol(currentViewName, currentJoinViewInfo.fromColumnName)], columnListForGroupByAfterJoin);
         previousAggregateColumnNames.push(op.col(currentJoinViewInfo.joinViewName));
     });
     return opticPlanWithJoins;
@@ -145,23 +160,23 @@ function buildJsonColumnsList(fieldInfo, aggregateColumnNames) {
     return jsonColumns;
 }
 
-function buildGroupByViewColumns(viewName, fieldInfo, previousAggregateColumnNames, currentJoinViewInfo) {
-    const groupByViewColumns = [];
-    fieldInfo.includeInGroupBy.forEach(function(includeInGroupByColumn) {
-        groupByViewColumns.push(op.viewCol(viewName, includeInGroupByColumn));
-    });
+function buildColumnListForGroupByAfterJoin(viewName, fieldInfo, previousAggregateColumnNames, currentJoinViewInfo) {
+    const columns = [];
     fieldInfo.nonJoinColumnNameStrings.forEach(function(nonJoinColumnName) {
-        if (!fieldInfo.includeInGroupBy.includes(nonJoinColumnName)) {
-            if (nonJoinColumnName !== currentJoinViewInfo.fromColumnName) {
-                groupByViewColumns.push(op.viewCol(viewName, nonJoinColumnName));
-            }
+        if (nonJoinColumnName !== currentJoinViewInfo.fromColumnName) {
+            columns.push(op.viewCol(viewName, nonJoinColumnName));
+        }
+    });
+    fieldInfo.childJoinColumnNames.forEach(function(includeInGroupByColumn) {
+        if (!fieldInfo.nonJoinColumnNameStrings.includes(includeInGroupByColumn)) {
+            columns.push(op.viewCol(viewName, includeInGroupByColumn));
         }
     });
     previousAggregateColumnNames.forEach(function(columnName) {
-        groupByViewColumns.push(op.col(columnName));
+        columns.push(op.col(columnName));
     });
-    groupByViewColumns.push(op.arrayAggregate(currentJoinViewInfo.joinViewName, op.col(currentJoinViewInfo.joinViewName)));
-    return groupByViewColumns;
+    columns.push(op.arrayAggregate(currentJoinViewInfo.joinViewName, op.col(currentJoinViewInfo.joinViewName)));
+    return columns;
 }
 
 function extractSchemaNameFromViewDirective(directives) {
@@ -187,36 +202,40 @@ function addWhereClausesFromArguments(opticPlan, fieldArguments, viewName) {
     return opticPlan;
 }
 
+function getJoinViewInfo(selection, viewName) {
+    const columnName = selection.name.value;
+    const foreignSelectionSet = selection.selectionSet;
+    const keyNames = getJoinColumnNames(foreignSelectionSet);
+    let fromColumnName = keyNames.parentJoinColumn;
+    const foreignJoinPlan = processView(selection, viewName, fromColumnName);
+    const joinViewInfo = {
+        "foreignJoinPlan" : foreignJoinPlan,
+        "fromColumnName" : fromColumnName,
+        "toColumnName" : keyNames.childJoinColumn,
+        "joinViewName" : columnName
+    };
+    return joinViewInfo;
+}
+
 function getInformationFromFields(fieldSelectionSet, viewName) {
     const nonJoinColumnNameStrings = [];
-    const includeInGroupBy = [];
-    const joinViewInfos = [];
-    const groupByColumns = [];
-    const groupByAggregateColumns = [];
-    const groupByAggregateColumnNames = [];
+    const childJoinColumnNames = [];
+    const joinViewInfos = [];               // Structure to hold info for all joins defined in this SelectionSet
+    const groupByColumnNames = [];          // The column names that are used for grouping rows
+    const groupByAggregateColumns = [];     // A list of op.col values for a call to op.groupBy
+    const groupByAggregateColumnNames = []; // The names of columns in the op.groupBy, used in the JSON object creation for the view
 
-    // Get field information
     fieldSelectionSet.selections.forEach(function(selection) {
-        const columnName = selection.name.value;
-        const foreignSelectionSet = selection.selectionSet;
-        // If the field is a join, drill down.
-        if (foreignSelectionSet) {
-            const keyNames = getKeyNames(foreignSelectionSet);
-            let fromColumnName = keyNames.parentJoinColumn;
-            const foreignJoinPlan = processView(selection, viewName, fromColumnName);
-            const joinViewInfo = {
-                "foreignJoinPlan" : foreignJoinPlan,
-                "fromColumnName" : fromColumnName,
-                "toColumnName" : keyNames.childJoinColumn,
-                "joinViewName" : columnName
-            };
+        if (selection.selectionSet) {
+            const joinViewInfo = getJoinViewInfo(selection, viewName);
             joinViewInfos.push(joinViewInfo);
         } else {
+            const columnName = selection.name.value;
             let includeThisFieldInResults = true;
             let aggregateDirectiveFound = false;
             selection.directives.forEach(function(directive) {
                 if (directive.name.value === "childJoinColumn") {
-                    includeInGroupBy.push(columnName);
+                    childJoinColumnNames.push(columnName);
                     includeThisFieldInResults = false;
                 }
                 if (directive.name.value === "parentJoinColumn") {
@@ -225,30 +244,23 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
                 if (directive.name.value === "GroupBy") {
                     includeThisFieldInResults = false;
                     aggregateDirectiveFound = true;
-                    groupByColumns.push(columnName);
+                    groupByColumnNames.push(columnName);
                 }
-                if (directive.name.value === "Count") {
+                if (aggMap[directive.name.value]) {
+                    const opticFunction = aggMap[directive.name.value];
                     includeThisFieldInResults = false;
                     aggregateDirectiveFound = true;
-                    groupByAggregateColumns.push(op.count(columnName+"_count", columnName));
-                    groupByAggregateColumnNames.push(columnName+"_count");
-                }
-                if (directive.name.value === "Sum") {
-                    includeThisFieldInResults = false;
-                    aggregateDirectiveFound = true;
-                    groupByAggregateColumns.push(op.sum(columnName+"_sum", columnName));
-                    groupByAggregateColumnNames.push(columnName+"_sum");
-                }
-                if (directive.name.value === "Average") {
-                    includeThisFieldInResults = false;
-                    aggregateDirectiveFound = true;
-                    groupByAggregateColumns.push(op.avg(columnName+"_average", columnName));
-                    groupByAggregateColumnNames.push(columnName+"_average");
+                    groupByAggregateColumns.push(opticFunction.func(columnName+"_"+opticFunction.name, columnName));
+                    groupByAggregateColumnNames.push(columnName+"_"+opticFunction.name);
                 }
             });
+
+            // If the current column has an aggregate directive,
+            // it is added to the list when it is found because it needs the specific op.* function
             if (!aggregateDirectiveFound) {
                 groupByAggregateColumns.push(op.col(columnName));
             }
+
             if (includeThisFieldInResults) {
                 nonJoinColumnNameStrings.push(columnName);
             }
@@ -256,15 +268,15 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     });
     return {
         "joinViewInfos" : joinViewInfos,
-        "includeInGroupBy" : includeInGroupBy,
+        "childJoinColumnNames" : childJoinColumnNames,
         "nonJoinColumnNameStrings" : nonJoinColumnNameStrings,
-        "groupByColumns" : groupByColumns,
+        "groupByColumnNames" : groupByColumnNames,
         "groupByAggregateColumns" : groupByAggregateColumns,
         "groupByAggregateColumnNames" : groupByAggregateColumnNames
     };
 }
 
-function getKeyNames(selectionSet) {
+function getJoinColumnNames(selectionSet) {
     let parentJoinColumn = null;
     let childJoinColumn = null;
     selectionSet.selections.forEach(function(selection) {
