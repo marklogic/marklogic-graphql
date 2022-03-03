@@ -60,7 +60,13 @@ function processQuery(operationNode) {
     if (!opticPlan) {
         return null;
     }
-    opticPlan = wrapQueryPlanInJsonDataObject(opticPlan, queryField.name.value);
+    let viewAlias = null;
+    if (queryField.alias) {
+        viewAlias = queryField.alias.value;
+    } else {
+        viewAlias = queryField.name.value;
+    }
+    opticPlan = wrapQueryPlanInJsonDataObject(opticPlan, viewAlias);
     return opticPlan;
 }
 
@@ -101,10 +107,14 @@ function processView(queryField, parentViewName, fromColumnName) {
     const joinAndAggregateColumnNames = buildListOfJoinAndAggregateColumnNames(fieldInfo);
     const jsonSelectObjectColumns = buildJsonColumnsList(fieldInfo, joinAndAggregateColumnNames);
     const toColumnName = fieldSelectionSet.selections[0].name.value;
+    let viewAlias = viewName;
+    if (queryField.alias) {
+        viewAlias = queryField.alias.value;
+    }
     const selectColumnArray = (
         fromColumnName ?
-            [ op.viewCol(viewName, toColumnName), op.as(viewName, op.jsonObject(jsonSelectObjectColumns)) ] :
-            op.as(viewName, op.jsonObject(jsonSelectObjectColumns))
+            [ op.viewCol(viewName, toColumnName), op.as(viewAlias, op.jsonObject(jsonSelectObjectColumns)) ] :
+            op.as(viewAlias, op.jsonObject(jsonSelectObjectColumns))
     );
     viewOpticPlan = viewOpticPlan.select(selectColumnArray);
 
@@ -151,8 +161,8 @@ function addJoinsToViewPlan(viewOpticPlan, currentViewName, fieldInfo) {
 
 function buildJsonColumnsList(fieldInfo, aggregateColumnNames) {
     const jsonColumns = [];
-    fieldInfo.nonJoinColumnNameStrings.forEach(function(columnName) {
-        jsonColumns.push(op.prop(columnName, op.col(columnName)));
+    fieldInfo.jsonColumnAliasList.forEach(function(column) {
+        jsonColumns.push(column);
     });
     aggregateColumnNames.forEach(function(columnName) {
         jsonColumns.push(op.prop(columnName, op.col(columnName)));
@@ -208,13 +218,12 @@ function getJoinViewInfo(selection, viewName) {
     const keyNames = getJoinColumnNames(foreignSelectionSet);
     let fromColumnName = keyNames.parentJoinColumn;
     const foreignJoinPlan = processView(selection, viewName, fromColumnName);
-    const joinViewInfo = {
+    return {
         "foreignJoinPlan" : foreignJoinPlan,
         "fromColumnName" : fromColumnName,
         "toColumnName" : keyNames.childJoinColumn,
         "joinViewName" : columnName
     };
-    return joinViewInfo;
 }
 
 function getInformationFromFields(fieldSelectionSet, viewName) {
@@ -224,6 +233,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
     const groupByColumnNames = [];          // The column names that are used for grouping rows
     const groupByAggregateColumns = [];     // A list of op.col values for a call to op.groupBy
     const groupByAggregateColumnNames = []; // The names of columns in the op.groupBy, used in the JSON object creation for the view
+    const jsonColumnAliasList = [];
 
     fieldSelectionSet.selections.forEach(function(selection) {
         if (selection.selectionSet) {
@@ -231,6 +241,12 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
             joinViewInfos.push(joinViewInfo);
         } else {
             const columnName = selection.name.value;
+            let columnAlias = columnName;
+            if (selection.alias) {
+                columnAlias = selection.alias.value;
+            }
+            console.log("columnName: " + columnName);
+            console.log("columnAlias: " + columnAlias);
             let includeThisFieldInResults = true;
             let aggregateDirectiveFound = false;
             selection.directives.forEach(function(directive) {
@@ -263,6 +279,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
 
             if (includeThisFieldInResults) {
                 nonJoinColumnNameStrings.push(columnName);
+                jsonColumnAliasList.push(op.prop(columnAlias, op.col(columnName)));
             }
         }
     });
@@ -270,6 +287,7 @@ function getInformationFromFields(fieldSelectionSet, viewName) {
         "joinViewInfos" : joinViewInfos,
         "childJoinColumnNames" : childJoinColumnNames,
         "nonJoinColumnNameStrings" : nonJoinColumnNameStrings,
+        "jsonColumnAliasList" : jsonColumnAliasList,
         "groupByColumnNames" : groupByColumnNames,
         "groupByAggregateColumns" : groupByAggregateColumns,
         "groupByAggregateColumnNames" : groupByAggregateColumnNames
