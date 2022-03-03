@@ -17,11 +17,11 @@ const test1ExpectedResults = nb.toNode();
 let countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy } }";
 // When the parse and execute are called
 let response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + test1ExpectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(test1ExpectedResults, actualResult),
         "The resulting data set does not match the expected results.")
@@ -37,11 +37,11 @@ const test2ExpectedResults = nb.toNode();
 countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count } }";
 // When the parse and execute are called
 response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + test2ExpectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(test2ExpectedResults, actualResult),
         "The resulting data set does not match the expected results.")
@@ -57,11 +57,11 @@ const test3ExpectedResults = nb.toNode();
 countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count weight } }";
 // When the parse and execute are called
 response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + test3ExpectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(test3ExpectedResults, actualResult, ["weight"]),
         "The resulting data set does not match the expected results.")
@@ -77,11 +77,11 @@ const test4ExpectedResults = nb.toNode();
 countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count weight @Sum } }";
 // When the parse and execute are called
 response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + test4ExpectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(test4ExpectedResults, actualResult),
         "The resulting data set does not match the expected results.")
@@ -97,11 +97,11 @@ const test5ExpectedResults = nb.toNode();
 countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count weight @Average } }";
 // When the parse and execute are called
 response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + test5ExpectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(test5ExpectedResults, actualResult),
         "The resulting data set does not match the expected results.")

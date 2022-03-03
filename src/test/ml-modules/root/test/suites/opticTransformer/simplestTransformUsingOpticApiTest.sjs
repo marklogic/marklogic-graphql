@@ -17,10 +17,11 @@ const assertions = [];
 // Test #1
 // Given a query with the query keyword and query name
 let simpleGraphQlQueryString = "query someQuery { Humans { name height } }";
+
 // When the parse is called
 let response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
-console.log("expectedOpticPlanExport:\n" + JSON.stringify(expectedOpticPlanExport));
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
+
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);

@@ -14,12 +14,12 @@ const expectedResults = nb.toNode();
 
 // When parse and execute are called
 const response = transformGraphqlIntoOpticPlan(simpleGraphQlWithArgumentQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 let actualResult = executeOpticPlan(response.opticPlan);
 
 // Then the fields and view have the alias names not the original names.
 console.log("Expected Result=>\n" + expectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(expectedResults, actualResult),
         "The resulting data set does not match the expected results.")

@@ -133,7 +133,7 @@ function addGroupByToViewPlan(viewOpticPlan, fieldInfo) {
 function buildListOfJoinAndAggregateColumnNames(fieldInfo) {
     const joinAndAggregateColumnNames = [];
     fieldInfo.joinViewInfos.forEach(function(currentJoinViewInfo) {
-        joinAndAggregateColumnNames.push(currentJoinViewInfo.joinViewName);
+        joinAndAggregateColumnNames.push(currentJoinViewInfo.joinViewAlias);
     });
     fieldInfo.groupByColumnNames.forEach(function(groupByColumnName) {
         joinAndAggregateColumnNames.push(groupByColumnName);
@@ -186,7 +186,7 @@ function buildColumnListForGroupByAfterJoin(viewName, fieldInfo, previousAggrega
     previousAggregateColumnNames.forEach(function(columnName) {
         columns.push(op.col(columnName));
     });
-    columns.push(op.arrayAggregate(currentJoinViewInfo.joinViewName, op.col(currentJoinViewInfo.joinViewName)));
+    columns.push(op.arrayAggregate(currentJoinViewInfo.joinViewAlias, op.col(currentJoinViewInfo.joinViewAlias)));
     return columns;
 }
 
@@ -215,6 +215,10 @@ function addWhereClausesFromArguments(opticPlan, fieldArguments, viewName) {
 
 function getJoinViewInfo(selection, viewName) {
     const columnName = selection.name.value;
+    let columnAlias = columnName;
+    if (selection.alias) {
+        columnAlias = selection.alias.value;
+    }
     const foreignSelectionSet = selection.selectionSet;
     const keyNames = getJoinColumnNames(foreignSelectionSet);
     let fromColumnName = keyNames.parentJoinColumn;
@@ -223,7 +227,8 @@ function getJoinViewInfo(selection, viewName) {
         "foreignJoinPlan" : foreignJoinPlan,
         "fromColumnName" : fromColumnName,
         "toColumnName" : keyNames.childJoinColumn,
-        "joinViewName" : columnName
+        "joinViewName" : columnName,
+        "joinViewAlias" : columnAlias
     };
 }
 

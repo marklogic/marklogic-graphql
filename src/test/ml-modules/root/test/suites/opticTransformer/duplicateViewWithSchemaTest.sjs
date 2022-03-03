@@ -23,11 +23,11 @@ assertions.push(
 let graphQlQueryStringWithDuplicatedViewAndSchemaDirective = "query someQuery { Names @Schema(name: \"Primary\") { name } }";
 // When the query uses an ambiguous View and specifies a schema
 let response = transformGraphqlIntoOpticPlan(graphQlQueryStringWithDuplicatedViewAndSchemaDirective);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedPrimaryResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(expectedPrimaryResults, actualResult),
         "The resulting data set does not match the expected results.")
@@ -37,11 +37,11 @@ assertions.push(
 graphQlQueryStringWithDuplicatedViewAndSchemaDirective = "query someQuery { Names @Schema(name: \"Secondary\") { height } }";
 // When the query uses an ambiguous View and specifies the secondary schema
 response = transformGraphqlIntoOpticPlan(graphQlQueryStringWithDuplicatedViewAndSchemaDirective);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected and different from the first
 actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedSecondaryResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(expectedSecondaryResults, actualResult),
         "The resulting data set does not match the expected results.")

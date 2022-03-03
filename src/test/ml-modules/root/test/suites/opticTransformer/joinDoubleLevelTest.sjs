@@ -16,7 +16,7 @@ const assertions = [];
 // When the parse is called
 let response = transformGraphqlIntoOpticPlan(simpleGraphQlJoinQueryString);
 // Then the returned Optic DSL is what is expected.
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);

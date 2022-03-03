@@ -17,12 +17,12 @@ const countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @
 
 // When parse and execute are called
 const response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + JSON.stringify(response.opticPlan.export()));
+console.log("opticPlan:\n" + response.opticPlan.export());
+const actualResult = executeOpticPlan(response.opticPlan);
 
 // Then the result set contains the expected results including the correct aliases for both aggregates.
-const actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + expectedResults);
-console.log("Actual Result=>\n" + JSON.stringify(actualResult));
+console.log("Actual Result=>\n" + actualResult);
 assertions.push(
     test.assertTrue(deepEqual(expectedResults, actualResult),
         "The resulting data set does not match the expected results.")
