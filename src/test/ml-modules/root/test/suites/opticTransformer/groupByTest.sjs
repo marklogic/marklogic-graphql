@@ -7,18 +7,18 @@ const {deepEqual} = require("/testHelpers");
 const assertions = [];
 
 
-// Given a query with field aliases as well as an alias for the view
-const simpleGraphQlWithArgumentQueryString = "query someQuery { H: Humans { nm: name ht: height } }";
+// Given a query with a @GroupBy directive, but no aggregates
+let countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy } }";
 const expectedResults = new NodeBuilder()
-    .addNode({"data":{"H":[{"nm":"John", "ht":70}, {"nm":"Jane", "ht":65}, {"nm":"Jenny", "ht":65}, {"nm":"Jim", "ht":75}, {"nm":"Joe", "ht":80}, {"nm":"Joan", "ht":65}]}})
+    .addNode({"data":{"Humans":[{"hair":"Black"}, {"hair":"Blond"}, {"hair":"Brown"}]}})
     .toNode();
 
-// When parse and execute are called
-const response = transformGraphqlIntoOpticPlan(simpleGraphQlWithArgumentQueryString);
+// When the parse and execute are called
+let response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
 console.log("opticPlan:\n" + response.opticPlan.export());
 let actualResult = executeOpticPlan(response.opticPlan);
 
-// Then the fields and view have the alias names not the original names.
+// Then the result set of the Optic query is what is expected.
 console.log("Expected Result=>\n" + expectedResults);
 console.log("Actual Result=>\n" + actualResult);
 assertions.push(

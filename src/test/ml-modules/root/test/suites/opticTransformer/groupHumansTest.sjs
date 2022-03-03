@@ -4,42 +4,21 @@
 const test = require("/test/test-helper.xqy");
 const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require("/mlGraphqlLibOpticApi");
 const {deepEqual} = require("/testHelpers");
-
 const assertions = [];
 
 
-// Test #1, @GroupBy
+// Test #2, @GroupBy and @Count
 let nb = new NodeBuilder();
-nb.addNode({"data":{"Humans":[{"hair":"Black"}, {"hair":"Blond"}, {"hair":"Brown"}]}});
-const test1ExpectedResults = nb.toNode();
+nb.addNode({"data":{"Humans":[{"hair":"Black", "name_count":2}, {"hair":"Blond", "name_count":1}, {"hair":"Brown", "name_count":3}]}});
+const test2ExpectedResults = nb.toNode();
 
-// Given a simple query with a single Field that also has the @GroupBy directive
-let countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy } }";
+// Given a query with a single Field that also has the @GroupBy directive
+let countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count } }";
 // When the parse and execute are called
 let response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
 console.log("opticPlan:\n" + response.opticPlan.export());
 // Then the result set of the Optic query is what is expected.
 let actualResult = executeOpticPlan(response.opticPlan);
-console.log("Expected Result=>\n" + test1ExpectedResults);
-console.log("Actual Result=>\n" + actualResult);
-assertions.push(
-    test.assertTrue(deepEqual(test1ExpectedResults, actualResult),
-        "The resulting data set does not match the expected results.")
-);
-
-
-// Test #2, @GroupBy and @Count
-nb = new NodeBuilder();
-nb.addNode({"data":{"Humans":[{"hair":"Black", "name_count":2}, {"hair":"Blond", "name_count":1}, {"hair":"Brown", "name_count":3}]}});
-const test2ExpectedResults = nb.toNode();
-
-// Given a query with a single Field that also has the @GroupBy directive
-countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count } }";
-// When the parse and execute are called
-response = transformGraphqlIntoOpticPlan(countGraphQlQueryString);
-console.log("opticPlan:\n" + response.opticPlan.export());
-// Then the result set of the Optic query is what is expected.
-actualResult = executeOpticPlan(response.opticPlan);
 console.log("Expected Result=>\n" + test2ExpectedResults);
 console.log("Actual Result=>\n" + actualResult);
 assertions.push(
