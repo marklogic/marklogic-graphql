@@ -7,10 +7,10 @@ const {deepEqual} = require("/testHelpers");
 const assertions = [];
 
 
-// Given a query with a single Field that also has the @GroupBy directive
-let countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count } }";
+// Given a query with the @GroupBy, @Count, and @Average directives
+const countGraphQlQueryString = "query someQuery { Humans { hair @GroupBy name @Count weight @Average } }";
 const expectedResults = new NodeBuilder()
-    .addNode({"data":{"Humans":[{"hair":"Black", "name_count":2}, {"hair":"Blond", "name_count":1}, {"hair":"Brown", "name_count":3}]}})
+    .addNode({"data":{"Humans":[{"weight_average":162.5, "hair":"Black", "name_count":2}, {"weight_average":169, "hair":"Blond", "name_count":1}, {"weight_average":153.666666666667, "hair":"Brown", "name_count":3}]}})
     .toNode();
 
 // When the parse and execute are called
