@@ -16,7 +16,7 @@ const expectedResults = new NodeBuilder()
 // When parse and execute are called
 const response = transformGraphqlIntoOpticPlan(simpleGraphQlWithArgumentQueryString);
 console.log("opticPlan:\n" + response.opticPlan.export());
-let actualResult = executeOpticPlan(response.opticPlan);
+const actualResult = executeOpticPlan(response.opticPlan);
 
 // Then the fields and view have the alias names not the original names.
 console.log("Expected Result=>\n" + expectedResults);

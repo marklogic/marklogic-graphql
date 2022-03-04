@@ -2,13 +2,14 @@
 
 const test = require("/test/test-helper.xqy");
 const {transformGraphqlIntoOpticPlan, executeOpticPlan} = require("/mlGraphqlLibOpticApi");
-
-const expectedResultsStartWith = "SQL-AMBIGUOUSTABLE";
 const assertions = [];
 
-// Given a query with a view that exists in multiple schemas
+
+// Given a query with a view that exists in multiple schemas, but no @Schema directive
 let graphQlQueryStringWithDuplicatedView = "query someQuery { Names { name } }";
-// When the query does not specify a schema
+const expectedResultsStartWith = "SQL-AMBIGUOUSTABLE";
+
+// When parse and execute are called
 let response = transformGraphqlIntoOpticPlan(graphQlQueryStringWithDuplicatedView);
 console.log("opticPlan:\n" + response.opticPlan.export());
 
