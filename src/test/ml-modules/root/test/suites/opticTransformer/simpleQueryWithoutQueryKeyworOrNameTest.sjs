@@ -7,14 +7,14 @@ const {deepEqual} = require("/testHelpers");
 const assertions = [];
 
 
-// Given a query with the query keyword and query name
-const simpleGraphQlQueryString = "query someQuery { Humans { name height } }";
+// Given a query without a name
+const simpleGraphQlWithArgumentQueryString = "{ Humans { name height } }";
 const expectedResults = new NodeBuilder()
     .addNode({"data":{"Humans":[{"name":"Jenny", "height":65}, {"name":"Joe", "height":80}, {"name":"John", "height":70}, {"name":"Joan", "height":65}, {"name":"Jane", "height":65}, {"name":"Jim", "height":75}]}})
     .toNode();
 
 // When parse and execute are called
-let response = transformGraphqlIntoOpticPlan(simpleGraphQlQueryString);
+const response = transformGraphqlIntoOpticPlan(simpleGraphQlWithArgumentQueryString);
 console.log("opticPlan:\n" + response.opticPlan.export());
 let actualResult = executeOpticPlan(response.opticPlan);
 
@@ -25,6 +25,5 @@ assertions.push(
     test.assertTrue(deepEqual(expectedResults, actualResult),
         "The resulting data set does not match the expected results.")
 );
-
 
 assertions;
