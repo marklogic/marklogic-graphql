@@ -16,7 +16,7 @@ The parser used is the parser included in the JavaScript reference implementatio
 - Run the tests without suite clean up, by ensuring "Run Teardown after each suite" is NOT checked.
 - This will make it so the following curl commands return data.
 5. Test the endpoint using curl.
->`curl --digest --user admin:admin -X POST -H "Content-type: application/txt" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8004/LATEST/resources/graphql`
+>`curl --digest --user admin:admin -X POST -H "Content-type: application/graphql" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8004/LATEST/resources/graphql`
 7. You can also test the endpoint by running the bash script, sampleGraphqlQuery.sh
 
 ## Future Work
