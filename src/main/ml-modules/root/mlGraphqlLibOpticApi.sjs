@@ -16,6 +16,7 @@ const aggMap = {
         "name" : "count",
         "func" : function (columnAlias, columnName) { return op.count(columnAlias, columnName); }
     },
+
     "Sum" : {
         "name" : "sum",
         "func" : function (columnAlias, columnName) { return op.sum(columnAlias, columnName); }
@@ -326,6 +327,7 @@ function getJoinColumnNames(selectionSet) {
 function executeOpticPlan(opticPlan) {
     const planObj = opticPlan.export();
     fn.trace("Plan Export\n" + op.toSource(planObj), graphqlTraceEvent);
+
 
     let result = null;
     try {
