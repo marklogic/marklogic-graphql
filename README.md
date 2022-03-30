@@ -1,10 +1,28 @@
 # graphql-endpoint-poc
 
-This is a rough proof-of-concept of an endpoint running on a MarkLogic appServer.
-The endpoint accepts a graphql query string, then parses the query into a graphql AST representation of the query.
-The returned value is a JSON object containing the original query and a string representation of the AST.
+This is a rough proof-of-concept of an endpoint running in a MarkLogic appServer.
+The endpoint accepts a graphql query string, parses the query into a graphql AST representation of the query, 
+transforms the query into an Optic query, runs the query, and returns the result of the query.
+- If everything works as expected, the returned value is a JSON object containing a "data" property which contains the data requested by the query.
+- If errors occur, the returned value is a JSON object with the original query and error information.
+
+This POC operates in a schema-less mode. Therefore, there is no introspection and validation is minimal.
+Instead, views that are currently available in Optic can be used in requests to this service.
 
 The parser used is the parser included in the JavaScript reference implementation of GraphQl (https://github.com/graphql/graphql-js). 
+
+This POC can handle:
+- Arguments
+- Joins 
+  - multiple on a single level, as well as nested.
+  - Requires the use of custom directives (@childJoinColumn and @parentJoinColumn)
+- Aliases
+- GroupBy
+  - Requires the use of a custom directive (@GroupBy)
+- Aggregations
+  - Requires the use of custom directives (@Count, @Sum, or @Average)
+
+See sampleGraphqlQuery.sh for examples
 
 ## Quick Start
 1. Create the Docker container running MarkLogic
@@ -18,6 +36,3 @@ The parser used is the parser included in the JavaScript reference implementatio
 5. Test the endpoint using curl.
 >`curl --digest --user admin:admin -X POST -H "Content-type: application/graphql" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8004/LATEST/resources/graphql`
 7. You can also test the endpoint by running the bash script, sampleGraphqlQuery.sh
-
-## Future Work
-1. Currently working on nested joins.
