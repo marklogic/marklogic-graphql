@@ -25,22 +25,22 @@ const fromTest = {"data":{"Names":[{"height":"65"}, {"height":"65"}, {"height":"
 const fromTestNode = (new NodeBuilder()).addNode(fromTest).toNode();
 
 assertions.push(
-    test.assertTrue(deepEqual(emptyArrayNode, emptyArrayNode),
-        "Two empty Array Nodes should be equal."),
-    test.assertFalse(deepEqual(emptyArrayNode, arrayNodeWithSingleObjectA),
-        "Array Nodes with a different number of objects should not be equal."),
-    test.assertTrue(deepEqual(arrayNodeWithSingleObjectA, arrayNodeWithSingleObjectA),
-        "A given array should be equal to itself."),
-    test.assertFalse(deepEqual(arrayNodeWithSingleObjectA, arrayNodeWithSingleObjectB),
-        "Two arrays containing a single (but different) objects, should not be equal."),
-    test.assertFalse(deepEqual(arrayNodeWithSingleObjectA, arrayNodeWithMultipleObjectAB),
-        "If one array is a superset of the other array (and contains more objects), they should not be equal."),
-    test.assertTrue(deepEqual(arrayNodeWithMultipleObjectAB, arrayNodeWithMultipleObjectBA),
-        "Two arrays with the same objects, but in a different order, should be equal."),
-    test.assertFalse(deepEqual(arrayNodeWithMultipleObjectAAB, arrayNodeWithMultipleObjectABB),
-        "The resulting data set does not match the expected results."),
-    test.assertTrue(deepEqual(fromTestNode, fromTestNode),
-        "Two arrays with the same objects, but in a different order, should be equal."),
+  test.assertTrue(deepEqual(emptyArrayNode, emptyArrayNode),
+    "Two empty Array Nodes should be equal."),
+  test.assertFalse(deepEqual(emptyArrayNode, arrayNodeWithSingleObjectA),
+    "Array Nodes with a different number of objects should not be equal."),
+  test.assertTrue(deepEqual(arrayNodeWithSingleObjectA, arrayNodeWithSingleObjectA),
+    "A given array should be equal to itself."),
+  test.assertFalse(deepEqual(arrayNodeWithSingleObjectA, arrayNodeWithSingleObjectB),
+    "Two arrays containing a single (but different) objects, should not be equal."),
+  test.assertFalse(deepEqual(arrayNodeWithSingleObjectA, arrayNodeWithMultipleObjectAB),
+    "If one array is a superset of the other array (and contains more objects), they should not be equal."),
+  test.assertTrue(deepEqual(arrayNodeWithMultipleObjectAB, arrayNodeWithMultipleObjectBA),
+    "Two arrays with the same objects, but in a different order, should be equal."),
+  test.assertFalse(deepEqual(arrayNodeWithMultipleObjectAAB, arrayNodeWithMultipleObjectABB),
+    "The resulting data set does not match the expected results."),
+  test.assertTrue(deepEqual(fromTestNode, fromTestNode),
+    "Two arrays with the same objects, but in a different order, should be equal."),
 );
 
 assertions;
