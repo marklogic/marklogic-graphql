@@ -31,28 +31,25 @@
             "always"
         ],
         "curly": ["error", "multi-line"],
-        "arrow-spacing": "error"
-
-        // These are from the DHF project. See https://eslint.org/docs/rules/ for more information.
-        // I'm not sure I agree with these choices ... (PmB)
-//        "no-prototype-builtins": "off", // Turn off errors for object prototype function calling. ie. foo.hasOwnProperty
-//        "no-irregular-whitespace": "off", // Turn off errors for irregular whitespace such as <NBSP>
-//        "no-unused-vars": "off",
-//            "array-bracket-spacing": "error",
-//            "block-spacing": "error",
-//            "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
-//            "comma-spacing": "error",
-//            "computed-property-spacing": "error",
-//            "func-call-spacing": "error",
-//            "key-spacing": "error",
-//            "keyword-spacing": "error",
-//            "jsx-quotes": "error",
-//            "no-trailing-spaces": "error",
-//            "object-curly-spacing": "error",
-//            "space-in-parens": "error",
-//            "space-before-blocks": "error",
+        "arrow-spacing": "error",
+        "array-bracket-spacing": "error",
+        "block-spacing": "error",
+        "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
+        "comma-spacing": "error",
+        "computed-property-spacing": "error",
+        "func-call-spacing": "error",
+        "key-spacing": "error",
+        "keyword-spacing": "error",
+        "jsx-quotes": "error",
+        "no-trailing-spaces": "error",
+        "object-curly-spacing": "error",
+        "space-in-parens": "error",
+        "space-before-blocks": "error"
     },
     "globals": {
-        "fn": "readonly"
+        "fn": "readonly",
+        "xdmp": "readonly",
+        "Sequence": "readonly",
+        "NodeBuilder": "readonly"
     }
 }
