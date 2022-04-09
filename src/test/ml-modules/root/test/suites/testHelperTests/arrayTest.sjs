@@ -1,17 +1,16 @@
 "use strict";
-/* global NodeBuilder */ // For ESLint
 
 const test = require("/test/test-helper.xqy");
 const {deepEqual} = require("/testHelpers");
 
 const assertions = [];
 
-const arrayWithSingleObjectA = [{"A":"a"}];
-const arrayWithSingleObjectB = [{"B":"b"}];
-const arrayWithMultipleObjectsAB = [{"A":"a"}, {"B":"b"}];
-const arrayWithMultipleObjectsBA = [{"B":"b"}, {"A":"a"}];
-const arrayWithMultipleObjectsAAB = [{"A":"a"}, {"A":"a"}, {"B":"b"}];
-const arrayWithMultipleObjectsABB = [{"A":"a"}, {"B":"b"}, {"B":"b"}];
+const arrayWithSingleObjectA = [{"A": "a"}];
+const arrayWithSingleObjectB = [{"B": "b"}];
+const arrayWithMultipleObjectsAB = [{"A": "a"}, {"B": "b"}];
+const arrayWithMultipleObjectsBA = [{"B": "b"}, {"A": "a"}];
+const arrayWithMultipleObjectsAAB = [{"A": "a"}, {"A": "a"}, {"B": "b"}];
+const arrayWithMultipleObjectsABB = [{"A": "a"}, {"B": "b"}, {"B": "b"}];
 
 const emptyArrayNode = (new NodeBuilder()).addNode([]).toNode();
 const arrayNodeWithSingleObjectA = (new NodeBuilder()).addNode(arrayWithSingleObjectA).toNode();
@@ -21,7 +20,7 @@ const arrayNodeWithMultipleObjectBA = (new NodeBuilder()).addNode(arrayWithMulti
 const arrayNodeWithMultipleObjectAAB = (new NodeBuilder()).addNode(arrayWithMultipleObjectsAAB).toNode();
 const arrayNodeWithMultipleObjectABB = (new NodeBuilder()).addNode(arrayWithMultipleObjectsABB).toNode();
 
-const fromTest = {"data":{"Names":[{"height":"65"}, {"height":"65"}, {"height":"65"}, {"height":"70"}, {"height":"75"}, {"height":"80"}]}};
+const fromTest = {"data": {"Names": [{"height": "65"}, {"height": "65"}, {"height": "65"}, {"height": "70"}, {"height": "75"}, {"height": "80"}]}};
 const fromTestNode = (new NodeBuilder()).addNode(fromTest).toNode();
 
 assertions.push(

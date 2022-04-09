@@ -1,5 +1,3 @@
-/* global xdmp */ // For ESLint
-
 const {executeOpticPlan, transformGraphqlIntoOpticPlan} = require("/mlGraphqlLibOpticApi");
 
 function post(context, params, graphQlQueryStr) {
