@@ -36,7 +36,11 @@ See sampleGraphqlQuery.sh for examples
 ogicdb/marklogic-server:10.0-8.1-centos-1.0.0-ea2
 2. Wait for http://localhost:8001/ to permit login with admin/admin
 3. Deploy the AppServer, REST extension, and code.
+On Linux
 >`./gradlew mlDeploy`
+
+On Windows (unsure why I need to explicitly call npmInstallGraphQl on Windows)
+> `gradlew.bat npmInstallGraphQl mlDeploy`
 4. Go to http://localhost:8004/test/ and run the tests.
 - Run the tests without suite clean up, by ensuring "Run Teardown after each suite" is NOT checked.
 - This will make it so the following curl commands return data.
