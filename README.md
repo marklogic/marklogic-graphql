@@ -25,8 +25,15 @@ This POC can handle:
 See sampleGraphqlQuery.sh for examples
 
 ## Quick Start
-1. Create the Docker container running MarkLogic
+### Prerequisites
+1. Java installed and JAVA_HOME set
+2. Python installed to create the ML container from the script. Otherwise, use the docker command
+### Steps
+1. Create the Docker container running MarkLogic using either of the following commands
 >`python Container/createMarkLogicContainer.py`
+
+>  docker run -it -d --name graphQlMarkLogic -p 8000:8000 -p 8001:8001 -p 8002:8002 -p 8003:8003 -p 8004:8004 -e MARKLOGIC_INIT=true -e MARKLOGIC_ADMIN_USERNAME=admin -e MARKLOGIC_ADMIN_PASSWORD=admin store/markl
+ogicdb/marklogic-server:10.0-8.1-centos-1.0.0-ea2
 2. Wait for http://localhost:8001/ to permit login with admin/admin
 3. Deploy the AppServer, REST extension, and code.
 >`./gradlew mlDeploy`
@@ -35,4 +42,4 @@ See sampleGraphqlQuery.sh for examples
 - This will make it so the following curl commands return data.
 5. Test the endpoint using curl.
 >`curl --digest --user admin:admin -X POST -H "Content-type: application/graphql" -d 'query someQuery { Humans(id: "1000") { name height } }' http://localhost:8004/LATEST/resources/graphql`
-7. You can also test the endpoint by running the bash script, sampleGraphqlQuery.sh
+6You can also test the endpoint by running the bash script, sampleGraphqlQuery.sh
