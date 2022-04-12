@@ -40,7 +40,7 @@ ogicdb/marklogic-server:10.0-8.1-centos-1.0.0-ea2`
 2. Wait for http://localhost:8001/ to permit login with admin/admin
 3. Deploy the AppServer, REST extension, and code.
 On Linux
->`./gradlew mlDeploy`
+>`./gradlew npmInstallGraphQl mlDeploy`
 
 On Windows (unsure why I need to explicitly call npmInstallGraphQl on Windows)
 > `gradlew.bat npmInstallGraphQl mlDeploy`
