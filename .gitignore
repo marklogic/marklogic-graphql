@@ -5,3 +5,4 @@
 /graphql/
 /MarkLogic/
 package-lock.json
+/Container/Logs/**

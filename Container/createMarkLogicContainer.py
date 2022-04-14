@@ -23,6 +23,7 @@ subprocess.run(
             '-p', '8002:8002',
             '-p', '8003:8003',
             '-p', '8004:8004',
+            '-v', 'C:/Users/PhilB/Documents/personal/workspaces/markLogic/assignments/graphQL/marklogic-graphql/Container/Logs:/var/opt/MarkLogic/Logs',
             '-e', 'MARKLOGIC_INIT=true',
             '-e', 'MARKLOGIC_ADMIN_USERNAME=admin',
             '-e', 'MARKLOGIC_ADMIN_PASSWORD=admin',
