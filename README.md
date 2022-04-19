@@ -29,7 +29,9 @@ See sampleGraphqlQuery.sh for examples
 >`python Container/createMarkLogicContainer.py`
 2. Wait for http://localhost:8001/ to permit login with admin/admin
 3. Deploy the AppServer, REST extension, and code.
->`./gradlew mlDeploy`
+>(Linux) $ ./gradlew mlDeploy
+
+>(Windows) > .\gradlew mlDeploy
 4. Go to http://localhost:8004/test/ and run the tests.
 - Run the tests without suite clean up, by ensuring "Run Teardown after each suite" is NOT checked.
 - This will make it so the following curl commands return data.
