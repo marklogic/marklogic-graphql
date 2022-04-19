@@ -42,4 +42,5 @@ task npmInstallGraphQl(type: NpmTask, dependsOn: createNodeModulesDirectory) {
 }
 
 mlLoadModules.dependsOn(npmInstallGraphQl)
+mlDeployApp.dependsOn(npmInstallGraphQl)
 mlUnitTest.dependsOn(mlLoadModules)
