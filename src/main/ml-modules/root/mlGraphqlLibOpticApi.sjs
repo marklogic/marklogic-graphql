@@ -18,7 +18,6 @@ function executeOpticPlan(opticPlan) {
 }
 
 function transformGraphqlIntoASTPlan(graphQlQueryStr) {
-  let opticPlan = null;
   let queryDocumentAst = null;
   errors = [];
 
