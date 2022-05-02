@@ -1,0 +1,35 @@
+{
+  "template":{
+    "context":"/cars/car",
+    "rows":[
+      {
+        "schemaName":"graphqlConflict",
+        "viewName":"Cars",
+        "columns":[
+          {
+            "name":"id",
+            "scalarType":"integer",
+            "val":"id"
+          },
+          {
+            "name":"ownerId",
+            "scalarType":"integer",
+            "val":"ownerId"
+          },
+          {
+            "name":"model",
+            "scalarType":"string",
+            "val":"model",
+            "nullable": true
+          },
+          {
+            "name":"year",
+            "scalarType":"string",
+            "val":"year",
+            "nullable": true
+          }
+        ]
+      }
+    ]
+  }
+}

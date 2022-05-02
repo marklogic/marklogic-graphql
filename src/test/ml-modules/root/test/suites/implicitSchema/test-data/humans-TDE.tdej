@@ -1,0 +1,47 @@
+{
+  "template":{
+    "context":"/humans/human",
+    "rows":[
+      {
+        "schemaName":"graphql",
+        "viewName":"Humans",
+        "columns":[
+          {
+            "name":"id",
+            "scalarType":"integer",
+            "val":"id"
+          },
+          {
+            "name":"name",
+            "scalarType":"string",
+            "val":"name",
+            "nullable": true
+          },
+          {
+            "name":"height",
+            "scalarType":"long",
+            "val":"height",
+            "nullable": true
+          },
+          {
+            "name":"weight",
+            "scalarType":"long",
+            "val":"weight",
+            "nullable": true
+          },
+          {
+            "name":"hair",
+            "scalarType":"string",
+            "val":"hair",
+            "nullable": true
+          },
+          {
+            "name":"drinkId",
+            "scalarType":"integer",
+            "val":"drinkId"
+          }
+        ]
+      }
+    ]
+  }
+}

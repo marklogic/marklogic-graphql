@@ -48,15 +48,10 @@ function getAllViewsNotInSysSchema() {
   let viewImplicitTypes = null;
 
   let result = null;
-  try {
-    viewImplicitTypes = op.fromSQL(sqlQuery);
-    viewImplicitTypes = viewImplicitTypes.where(op.not(op.eq(op.col("schema"), "sys")));
-    result = viewImplicitTypes.result();
-  } catch (err) {
-    const errorMessage = err.toString();
-    console.error(errorMessage);
-    errors.push(errorMessage);
-  }
+
+  viewImplicitTypes = op.fromSQL(sqlQuery);
+  viewImplicitTypes = viewImplicitTypes.where(op.not(op.eq(op.col("schema"), "sys")));
+  result = viewImplicitTypes.result();
 
   return result.toArray();
 }
@@ -120,13 +115,6 @@ function createImplicitSchema () {
     schema = schema + "}\n\n";
   });
 
-  try {
-    let ast = parse(schema);
-  } catch (err) {
-    const errorMessage = err.toString();
-    console.error(errorMessage);
-    errors.push(errorMessage);
-  }
   return schema;
 }
 

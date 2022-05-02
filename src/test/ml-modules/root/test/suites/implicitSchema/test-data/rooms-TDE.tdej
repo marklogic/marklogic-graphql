@@ -1,0 +1,29 @@
+{
+  "template":{
+    "context":"/rooms/room",
+    "rows":[
+      {
+        "schemaName":"graphql",
+        "viewName":"Rooms",
+        "columns":[
+          {
+            "name":"id",
+            "scalarType":"integer",
+            "val":"id"
+          },
+          {
+            "name":"houseId",
+            "scalarType":"integer",
+            "val":"houseId"
+          },
+          {
+            "name":"type",
+            "scalarType":"string",
+            "val":"type",
+            "nullable": true
+          }
+        ]
+      }
+    ]
+  }
+}

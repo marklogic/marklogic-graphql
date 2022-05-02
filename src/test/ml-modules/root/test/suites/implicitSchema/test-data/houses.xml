@@ -1,0 +1,20 @@
+<houses>
+    <house>
+        <id>1</id>
+        <ownerId>2</ownerId>
+        <number>415</number>
+        <street>Elm</street>
+    </house>
+    <house>
+        <id>2</id>
+        <ownerId>3</ownerId>
+        <number>656</number>
+        <street>Main</street>
+    </house>
+    <house>
+        <id>3</id>
+        <ownerId>3</ownerId>
+        <number>653</number>
+        <street>Second</street>
+    </house>
+</houses>

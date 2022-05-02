@@ -1,0 +1,41 @@
+{
+  "template":{
+    "context":"/laptops/laptop",
+    "rows":[
+      {
+        "schemaName":"graphql",
+        "viewName":"Laptops",
+        "columns":[
+          {
+            "name":"id",
+            "scalarType":"integer",
+            "val":"id"
+          },
+          {
+            "name":"ownerId",
+            "scalarType":"integer",
+            "val":"ownerId"
+          },
+          {
+            "name":"model",
+            "scalarType":"string",
+            "val":"model",
+            "nullable": true
+          },
+          {
+            "name":"screenSize",
+            "scalarType":"string",
+            "val":"screenSize",
+            "nullable": true
+          },
+          {
+            "name":"year",
+            "scalarType":"string",
+            "val":"year",
+            "nullable": true
+          }
+        ]
+      }
+    ]
+  }
+}
