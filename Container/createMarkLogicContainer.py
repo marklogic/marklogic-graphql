@@ -27,6 +27,6 @@ subprocess.run(
             '-e', 'MARKLOGIC_INIT=true',
             '-e', 'MARKLOGIC_ADMIN_USERNAME=admin',
             '-e', 'MARKLOGIC_ADMIN_PASSWORD=admin',
-            'store/marklogicdb/marklogic-server:10.0-8.1-centos-1.0.0-ea2'
+            'marklogicdb/marklogic-db:10.0-9.1-centos-1.0.0-ea4'
         ]
     )
