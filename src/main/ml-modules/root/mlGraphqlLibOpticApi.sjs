@@ -26,7 +26,7 @@ function transformGraphqlIntoASTPlan(graphQlQueryStr) {
   } catch (error) {
     const errorMessage =
         "Error parsing the GraphQL Request string: \n" + graphQlQueryStr;
-    console.error(errorMessage);
+    xdmp.log(errorMessage, 'error');
     errors.push(errorMessage);
     return buildASTObject(graphQlQueryStr, errors);
   }
