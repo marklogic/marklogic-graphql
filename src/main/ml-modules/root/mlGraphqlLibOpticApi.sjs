@@ -26,18 +26,17 @@ function transformGraphqlIntoASTPlan(graphQlQueryStr) {
   } catch (error) {
     const errorMessage =
         "Error parsing the GraphQL Request string: \n" + graphQlQueryStr;
-    xdmp.log(errorMessage, 'error');
+    xdmp.log(errorMessage, "error");
     errors.push(errorMessage);
-    return buildASTObject(graphQlQueryStr, errors);
   }
 
-  return buildASTObject(queryDocumentAst, errors);
+  return buildASTObject(queryDocumentAst, graphQlQueryStr, errors);
 }
 
-function buildASTObject(queryDocumentAst, errors) {
+function buildASTObject(queryDocumentAst, graphQlQueryStr, errors) {
   return {
-    "queryDocumentAst" : queryDocumentAst,
-    "result" : null,
+    "queryDocumentAst": queryDocumentAst,
+    "graphQlQueryStr": graphQlQueryStr,
     "errors": errors
   };
 }

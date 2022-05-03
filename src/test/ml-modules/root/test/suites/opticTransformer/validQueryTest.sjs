@@ -1,5 +1,4 @@
 "use strict";
-/* global NodeBuilder */ // For ESLint
 
 const test = require("/test/test-helper.xqy");
 const {transformGraphqlIntoASTPlan} = require("/mlGraphqlLibOpticApi");
@@ -7,84 +6,127 @@ const {deepEqual} = require("/testHelpers");
 const assertions = [];
 
 
-const simpleGraphQlWithArgumentQueryString = "query someQuery { books { title author } }";
-const simpleGraphQlWithNotValidArgumentQueryString = "query someQuery  books { title author } }";
+// Check transformGraphqlIntoASTResult function with an invalid mutation string
+xdmp.log("Valid query string test");
 
-const simpleGraphQlWithArgumentMutationString = "mutation AddNewPet ($name: String!, $petType: PetType) " +
-    "{ addPet(name: $name, petType: $petType) { id name petType } }";
-const simpleGraphQlWithNotValidArgumentMutationString = "mutation AddNewPet ($name: String!, $petType: PetType) " +
-    "{ addPet(name: $name, petType: $petType) { id name petType } ";
-
-const simpleGraphQlWithArgumentSubscriptionString = "subscription OnCommentAdded($postID: ID!) " +
-    "{ commentAdded(postID: $postID) {id content} }";
-const simpleGraphQlWithNotValidArgumentSubscriptionString = "subscription OnCommentAdded($postID: ID!) " +
-    "{ commentAdded(postID: $postID) {id content} ";
-
+// Given a valid query string
+const simpleGraphQlQueryString = "query someQuery { books { title author } }";
 
 // When parse is called for a valid query string
-let queryDocumentAst = transformGraphqlIntoASTPlan(simpleGraphQlWithArgumentQueryString);
+let transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlQueryString);
 
 xdmp.log("Expected Result=>\n" + []);
-xdmp.log("Actual Result=>\n" + queryDocumentAst["errors"]);
+xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
+
+// Then an AST document is returned
 assertions.push(
-    test.assertTrue(deepEqual([], queryDocumentAst["errors"]),
-        "The resulting AST object does not match the expected results.")
+  test.assertTrue(true, transformGraphqlIntoASTResult.queryDocumentAst.kind),
+
+  test.assertTrue(deepEqual([], transformGraphqlIntoASTResult["errors"]),
+    "The resulting AST object does not match the expected results.")
 );
+
+
+// Check transformGraphqlIntoASTResult function with an invalid query string
+xdmp.log("Invalid query string test");
+
+// Given an invalid query string
+const simpleGraphQlInvalidQueryString = "query someQuery  books { title author } }";
 
 // When parse is called for an invalid query string
-queryDocumentAst = transformGraphqlIntoASTPlan(simpleGraphQlWithNotValidArgumentQueryString);
+transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlInvalidQueryString);
 
+// Then an error is returned
 xdmp.log("Expected Result=>\n" + "Error parsing the GraphQL Request string: \n" +
-    simpleGraphQlWithNotValidArgumentQueryString);
-xdmp.log("Actual Result=>\n" + queryDocumentAst["errors"]);
+    simpleGraphQlInvalidQueryString);
+xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-    test.assertTrue(deepEqual(["Error parsing the GraphQL Request string: \n" +
-        simpleGraphQlWithNotValidArgumentQueryString], queryDocumentAst["errors"]),
-        "The resulting AST object does not match the expected results.")
+  test.assertTrue(deepEqual(["Error parsing the GraphQL Request string: \n" +
+        simpleGraphQlInvalidQueryString], transformGraphqlIntoASTResult["errors"]),
+  "The resulting AST object does not match the expected results.")
 );
+
+
+// Check transformGraphqlIntoASTResult function with a valid mutation string
+xdmp.log("Valid mutation sting test");
+
+// Given a valid mutation string
+const simpleGraphQlWithArgumentMutationString = "mutation AddNewPet ($name: String!, $petType: PetType) " +
+    "{ addPet(name: $name, petType: $petType) { id name petType } }";
 
 // When parse is called for a valid Mutation string
-queryDocumentAst = transformGraphqlIntoASTPlan(simpleGraphQlWithArgumentMutationString);
+transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlWithArgumentMutationString);
 
+// Then an AST document is returned
 xdmp.log("Expected Result=>\n" + []);
-xdmp.log("Actual Result=>\n" + queryDocumentAst["errors"]);
+xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-    test.assertTrue(deepEqual([], queryDocumentAst["errors"]),
-        "The resulting AST object does not match the expected results.")
+  test.assertTrue(true, transformGraphqlIntoASTResult.queryDocumentAst.kind),
+
+  test.assertTrue(deepEqual([], transformGraphqlIntoASTResult["errors"]),
+    "The resulting AST object does not match the expected results.")
 );
+
+
+// Check transformGraphqlIntoASTResult function with an invalid mutation string
+xdmp.log("Invalid mutation sting test");
+
+// Given an invalid mutation string
+const simpleGraphQlInvalidMutationString = "mutation AddNewPet ($name: String!, $petType: PetType) " +
+    "{ addPet(name: $name, petType: $petType) { id name petType } ";
 
 // When parse is called for an invalid Mutation string
-queryDocumentAst = transformGraphqlIntoASTPlan(simpleGraphQlWithNotValidArgumentMutationString);
+transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlInvalidMutationString);
 
+// Then an error is returned
 xdmp.log("Expected Result=>\n" + "Error parsing the GraphQL Request string: \n" +
-    simpleGraphQlWithNotValidArgumentMutationString);
-xdmp.log("Actual Result=>\n" + queryDocumentAst["errors"]);
+    simpleGraphQlInvalidMutationString);
+xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-    test.assertTrue(deepEqual(["Error parsing the GraphQL Request string: \n" +
-        simpleGraphQlWithNotValidArgumentMutationString], queryDocumentAst["errors"]),
-        "The resulting AST object does not match the expected results.")
+  test.assertTrue(deepEqual(["Error parsing the GraphQL Request string: \n" +
+        simpleGraphQlInvalidMutationString], transformGraphqlIntoASTResult["errors"]),
+  "The resulting AST object does not match the expected results.")
 );
+
+
+// Check transformGraphqlIntoASTResult function with a valid subscription string
+xdmp.log("Valid subscription string test");
+
+// Given a valid subscription string
+const simpleGraphQlWithArgumentSubscriptionString = "subscription OnCommentAdded($postID: ID!) " +
+    "{ commentAdded(postID: $postID) {id content} }";
 
 // When parse is called for a valid Subscription string
-queryDocumentAst = transformGraphqlIntoASTPlan(simpleGraphQlWithArgumentSubscriptionString);
+transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlWithArgumentSubscriptionString);
 
 xdmp.log("Expected Result=>\n" + []);
-xdmp.log("Actual Result=>\n" + queryDocumentAst["errors"]);
+xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-    test.assertTrue(deepEqual([], queryDocumentAst["errors"]),
-        "The resulting AST object does not match the expected results.")
+  test.assertTrue(true, transformGraphqlIntoASTResult.queryDocumentAst.kind),
+
+  test.assertTrue(deepEqual([], transformGraphqlIntoASTResult["errors"]),
+    "The resulting AST object does not match the expected results.")
 );
 
-// When parse is called for an invalid Subscription string
-queryDocumentAst = transformGraphqlIntoASTPlan(simpleGraphQlWithNotValidArgumentSubscriptionString);
 
+// Check transformGraphqlIntoASTResult function with an invalid subscription string
+xdmp.log("Invalid subscription string test");
+
+// Given an invalid subscription string
+const simpleGraphQlInvalidSubscriptionString = "subscription OnCommentAdded($postID: ID!) " +
+    "{ commentAdded(postID: $postID) {id content} ";
+
+// When parse is called for an invalid Subscription string
+transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlInvalidSubscriptionString);
+
+// Then an error is returned
 xdmp.log("Expected Result=>\n" + "Error parsing the GraphQL Request" +
     " string: \n" +
-    simpleGraphQlWithNotValidArgumentSubscriptionString);
-xdmp.log("Actual Result=>\n" + queryDocumentAst["errors"]);
+    simpleGraphQlInvalidSubscriptionString);
+xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-    test.assertTrue(deepEqual(["Error parsing the GraphQL Request string: \n" +
-        simpleGraphQlWithNotValidArgumentSubscriptionString], queryDocumentAst["errors"]),
-        "The resulting AST object does not match the expected results.")
+  test.assertTrue(deepEqual(["Error parsing the GraphQL Request string: \n" +
+        simpleGraphQlInvalidSubscriptionString], transformGraphqlIntoASTResult["errors"]),
+  "The resulting AST object does not match the expected results.")
 );
 assertions;
