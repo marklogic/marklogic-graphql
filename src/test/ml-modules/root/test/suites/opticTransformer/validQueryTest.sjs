@@ -20,7 +20,7 @@ xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 
 // Then an AST document is returned
 assertions.push(
-  test.assertTrue(true, transformGraphqlIntoASTResult.queryDocumentAst.kind),
+  test.assertEqual("Document", transformGraphqlIntoASTResult.queryDocumentAst.kind),
 
   test.assertTrue(deepEqual([], transformGraphqlIntoASTResult["errors"]),
     "The resulting AST object does not match the expected results.")
@@ -61,7 +61,7 @@ transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlWithArg
 xdmp.log("Expected Result=>\n" + []);
 xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-  test.assertTrue(true, transformGraphqlIntoASTResult.queryDocumentAst.kind),
+  test.assertEqual("Document", transformGraphqlIntoASTResult.queryDocumentAst.kind),
 
   test.assertTrue(deepEqual([], transformGraphqlIntoASTResult["errors"]),
     "The resulting AST object does not match the expected results.")
@@ -102,7 +102,7 @@ transformGraphqlIntoASTResult = transformGraphqlIntoASTPlan(simpleGraphQlWithArg
 xdmp.log("Expected Result=>\n" + []);
 xdmp.log("Actual Result=>\n" + transformGraphqlIntoASTResult["errors"]);
 assertions.push(
-  test.assertTrue(true, transformGraphqlIntoASTResult.queryDocumentAst.kind),
+  test.assertEqual("Document", transformGraphqlIntoASTResult.queryDocumentAst.kind),
 
   test.assertTrue(deepEqual([], transformGraphqlIntoASTResult["errors"]),
     "The resulting AST object does not match the expected results.")
