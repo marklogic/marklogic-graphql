@@ -1,57 +1,18 @@
 "use strict";
-/* global declareUpdate, xdmp */ // For ESLint
-
-declareUpdate();
 
 const test = require("/test/test-helper.xqy");
-const tde = require("/MarkLogic/tde.xqy");
 const {createImplicitSchema, storeImplicitSchema} = require("/mlGraphqlLibOpticApi");
 const admin = require("/MarkLogic/admin.xqy");
 const {parse} = require("/graphql/language/parser");
 const assertions = [];
 
-function testSetup() {
-  const dataFiles = ["humans", "cars", "laptops", "houses", "rooms", "drinks"];
-  // Load the TDE templates
-  dataFiles.forEach(function(template) {
-    let templateJson = xdmp.toJSON(test.getTestFile(template + "-TDE.tdej"));
-    tde.templateInsert("/templates/" + template + "-TDE.tdej", templateJson);
-  });
-  // Load the test data
-  dataFiles.forEach(function(template) {
-    test.loadTestFile(template + ".xml", xdmp.database(), "/" + template + ".xml");
-  });
-}
-
-function testTeardown() {
-  xdmp.documentDelete("/humans.xml");
-
-  function deleteDocumentInOtherDatabaseFunction(uri) {
-    return {
-      setUri: function setUri(_uri) { uri = _uri; },
-      delete: function docDelete() { declareUpdate(); xdmp.documentDelete(uri); }
-    };
-  }
-
-  const dataFiles = ["humans", "cars", "laptops", "houses", "rooms", "drinks"];
-  // Delete the TDE templates from the schemas database
-  dataFiles.forEach(function(template) {
-    let testInvoke = deleteDocumentInOtherDatabaseFunction("/templates/" + template + "-TDE.tdej");
-    xdmp.invokeFunction(
-      testInvoke.delete,
-      {database: xdmp.schemaDatabase()}
-    );
-  });
-}
-
-testSetup();
 
 // Given default data store in the database though test setup
 // When implicit schema is created by the user
 // Then test if implicit schema is containing desired information.
 let createdSchema = createImplicitSchema();
 let createdSchemaString = JSON.stringify(createdSchema);
-console.log("Actual Result of createdSchema =>\n" + createdSchema);
+xdmp.log("Actual Result of createdSchema =>\n" + createdSchema, "info");
 
 let graphqlSchemaTypes = ["graphql_Humans", "graphql_Cars", "graphql_Laptops", "graphql_Houses", "graphql_Rooms", "graphql_Drinks"];
 graphqlSchemaTypes.forEach((type) => {
@@ -80,12 +41,12 @@ secondarySchemaTypes.forEach((type) => {
 let queryDocumentAst = null;
 let errors = [];
 try {
-  queryDocumentAst = JSON.stringify(parse(createdSchema));
+  queryDocumentAst = parse(createdSchema);
 } catch (err) {
   errors.push(err.toString());
 }
 assertions.push(
-  test.assertNotEqual(queryDocumentAst, null, "The GraphQL implicit schema cannot be parsed into AST"),
+  test.assertEqual("Document", queryDocumentAst.kind, "The GraphQL implicit schema cannot be parsed into AST"),
   test.assertEqual(errors.length, 0, "The GraphQL implicit schema cannot be parsed into AST")
 );
 
@@ -106,12 +67,10 @@ let documentSaved = xdmp.eval(javascriptString,  null,
   });
 documentSaved = JSON.stringify(documentSaved);
 
-console.log("Actual Result of documentSaved=>\n" + documentSaved);
+xdmp.log("Actual Result of documentSaved=>\n" + documentSaved, "info");
 
 assertions.push(
   test.assertEqual(createdSchemaString, documentSaved, "The GraphQL implicit schema saved should match the generated one")
 );
-
-testTeardown();
 
 assertions;

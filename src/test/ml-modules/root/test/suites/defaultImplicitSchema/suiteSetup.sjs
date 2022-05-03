@@ -1,10 +1,24 @@
 // This test would be run once, before any tests in the suite has been run
 "use strict";
-/* global xdmp, xs, cts */ // For ESLint
+/* global declareUpdate, xs, cts */ // For ESLint
+
+declareUpdate();
 
 const admin = require("/MarkLogic/admin.xqy");
 const view = require("/MarkLogic/views");
+const test = require("/test/test-helper.xqy");
+const tde = require("/MarkLogic/tde.xqy");
 
+const dataFiles = ["humans", "cars", "carsConflict", "laptops", "houses", "rooms", "drinks"];
+// Load the TDE templates
+dataFiles.forEach(function(template) {
+  let templateJson = xdmp.toJSON(test.getTestFile(template + "-TDE.tdej"));
+  tde.templateInsert("/templates/" + template + "-TDE.tdej", templateJson);
+});
+// Load the test data
+dataFiles.forEach(function(template) {
+  test.loadTestFile(template + ".xml", xdmp.database(), "/" + template + ".xml");
+});
 
 createIndexesIfTheyDoNotExist();
 createSchemasIfTheyDoNotExist();
