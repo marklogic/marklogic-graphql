@@ -1,0 +1,24 @@
+{
+  "template":{
+    "context":"/drinks/drink",
+    "rows":[
+      {
+        "schemaName":"graphql",
+        "viewName":"Drinks",
+        "columns":[
+          {
+            "name":"id",
+            "scalarType":"integer",
+            "val":"id"
+          },
+          {
+            "name":"name",
+            "scalarType":"string",
+            "val":"name",
+            "nullable": true
+          }
+        ]
+      }
+    ]
+  }
+}

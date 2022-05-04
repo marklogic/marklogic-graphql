@@ -1,0 +1,20 @@
+<cars>
+    <car>
+        <id>1</id>
+        <ownerId>1</ownerId>
+        <model>Accord</model>
+        <year>2013</year>
+    </car>
+    <car>
+        <id>2</id>
+        <ownerId>1000</ownerId>
+        <model>Camry</model>
+        <year>2015</year>
+    </car>
+    <car>
+        <id>3</id>
+        <ownerId>1000</ownerId>
+        <model>Sonata</model>
+        <year>2017</year>
+    </car>
+</cars>

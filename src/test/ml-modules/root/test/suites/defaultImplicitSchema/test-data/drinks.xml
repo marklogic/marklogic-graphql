@@ -1,0 +1,14 @@
+<drinks>
+    <drink>
+        <id>1</id>
+        <name>Coke</name>
+    </drink>
+    <drink>
+        <id>2</id>
+        <name>Pepsi</name>
+    </drink>
+    <drink>
+        <id>3</id>
+        <name>RC</name>
+    </drink>
+</drinks>
