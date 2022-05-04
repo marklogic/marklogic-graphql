@@ -9,6 +9,8 @@ const {parse} = require("/graphql/language/parser");
 const op = require("/MarkLogic/optic.sjs");
 const admin = require("/MarkLogic/admin.xqy");
 
+let errors = [];
+
 function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
   return graphQlQueryStr;
 }
