@@ -2,6 +2,7 @@
 
 const test = require("/test/test-helper.xqy");
 const {createImplicitSchema} = require("/mlGraphqlLibOpticApi");
+const {parse} = require("/graphql/language/parser");
 const assertions = [];
 
 
@@ -9,66 +10,61 @@ const assertions = [];
 // When implicit schema is created by the user
 // Then test if implicit schema is containing the right data types for each argument part of each generated type.
 let createdSchema = createImplicitSchema();
+let createdAst = parse(createdSchema);
 
-const desiredDataTypes = `type secondary_names {
-  height: String
-}
+const mapDataTypes = new Map();
+mapDataTypes.set("integer", "Int");
+mapDataTypes.set("long", "Int");
+mapDataTypes.set("float", "Float");
+mapDataTypes.set("string", "String");
+mapDataTypes.set("boolean", "Boolean");
+mapDataTypes.set("id", "ID");
 
-type primary_names {
-  name: String
-}
 
-type graphqlConflict_Cars {
-  id: Int
-  ownerId: Int
-  model: String
-  year: String
-}
+const dataFiles = ["humans", "cars", "carsConflict", "laptops", "houses", "rooms", "drinks"];
 
-type graphql_Humans {
-  id: Int
-  name: String
-  height: Int
-  weight: Int
-  hair: String
-  drinkId: Int
-}
+dataFiles.forEach((template) => {
+  let tde = JSON.parse(test.getTestFile(template+"-TDE.tdej"));
+  let desiredSchemaName = tde.template.rows[0].schemaName;
+  let desiredViewName = tde.template.rows[0].viewName;
 
-type graphql_Cars {
-  id: Int
-  ownerId: Int
-  model: String
-  year: String
-}
+  let createdTypeAttributes = [];
+  let createdDefinitions = createdAst.definitions;
+  createdDefinitions.forEach((element) => {
+    if (element.name.value === desiredSchemaName + "_" + desiredViewName) {
+      let fields = element.fields;
+      fields.forEach((attribute) => {
+        let createdAttributeName = attribute.name.value;
+        let createdAttributeDataType = attribute.type.name.value;
+        createdTypeAttributes.push({
+          "name": createdAttributeName,
+          "dataType": createdAttributeDataType
+        });
+      });
+    }
+  });
+  createdTypeAttributes = JSON.stringify(createdTypeAttributes);
+  xdmp.log("createdTypeAttributes for " + template + "=>\n" + createdTypeAttributes, "info");
 
-type graphql_Laptops {
-  id: Int
-  ownerId: Int
-  model: String
-  screenSize: String
-  year: String
-}
+  let desiredTypeAttributes = [];
+  let columns = tde.template.rows[0].columns;
+  columns.forEach((element) => {
+    let desiredAttributeName = element.name;
+    let desiredAttributeDataType = element.scalarType;
+    desiredTypeAttributes.push({
+      "name": desiredAttributeName,
+      "dataType": mapDataTypes.get(desiredAttributeDataType)
+    });
+  });
+  desiredTypeAttributes = JSON.stringify(desiredTypeAttributes);
+  xdmp.log("desiredTypeAttributes " + template + "=>\n" + desiredTypeAttributes, "info");
 
-type graphql_Houses {
-  id: Int
-  ownerId: Int
-  number: String
-  street: String
-}
 
-type graphql_Rooms {
-  id: Int
-  houseId: Int
-  type: String
-}
+  assertions.push(
+    test.assertEqual(createdTypeAttributes, desiredTypeAttributes, "Implicit " + template +
+        " schema is not containing desired data types.")
+  );
 
-type graphql_Drinks {
-  id: Int
-  name: String
-}`;
-
-assertions.push(
-  test.assertTrue(createdSchema.includes(desiredDataTypes), "Implicit schema is not containing desired data types.")
-);
+});
 
 assertions;
