@@ -9,7 +9,12 @@ declareUpdate();
 function deleteDocumentInOtherDatabaseFunction(uri) {
   return {
     setUri: function setUri(_uri) { uri = _uri; },
-    delete: function docDelete() { declareUpdate(); xdmp.documentDelete(uri); }
+    delete: function docDelete() {
+      declareUpdate();
+      if (fn.exists(fn.doc(uri))) {
+        xdmp.documentDelete(uri);
+      }
+    }
   };
 }
 
