@@ -56,19 +56,23 @@ function getAllViewsNotInSysSchema() {
   return result.toArray();
 }
 
-const mapDataTypes = new Map();
 function createMapDataTypes () {
+
+  const mapDataTypes = new Map();
+
   mapDataTypes.set("integer", "Int");
   mapDataTypes.set("long", "Int");
   mapDataTypes.set("float", "Float");
   mapDataTypes.set("string", "String");
   mapDataTypes.set("boolean", "Boolean");
   mapDataTypes.set("id", "ID");
+
+  return mapDataTypes;
 }
 
 function createAllTypesArray () {
 
-  createMapDataTypes();
+  const mapDataTypes = createMapDataTypes();
   let allViews = getAllViewsNotInSysSchema();
 
   let allTypes = [];
@@ -140,3 +144,4 @@ exports.transformGraphqlIntoASTPlan = transformGraphqlIntoASTPlan;
 exports.executeOpticPlan = executeOpticPlan;
 exports.createImplicitSchema = createImplicitSchema;
 exports.storeImplicitSchema = storeImplicitSchema;
+exports.createMapDataTypes = createMapDataTypes;
