@@ -1,7 +1,7 @@
 "use strict";
 
 const test = require("/test/test-helper.xqy");
-const {createImplicitSchema} = require("/mlGraphqlLibOpticApi");
+const {createImplicitSchema, createMapDataTypes} = require("/mlGraphqlLibOpticApi");
 const {parse} = require("/graphql/language/parser");
 const assertions = [];
 
@@ -12,15 +12,7 @@ const assertions = [];
 let createdSchema = createImplicitSchema();
 let createdAst = parse(createdSchema);
 
-const mapDataTypes = new Map();
-mapDataTypes.set("integer", "Int");
-mapDataTypes.set("long", "Int");
-mapDataTypes.set("float", "Float");
-mapDataTypes.set("string", "String");
-mapDataTypes.set("boolean", "Boolean");
-mapDataTypes.set("id", "ID");
-
-
+const mapDataTypes = createMapDataTypes();
 const dataFiles = ["humans", "cars", "carsConflict", "laptops", "houses", "rooms", "drinks"];
 
 dataFiles.forEach((template) => {
