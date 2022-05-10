@@ -19,6 +19,7 @@ dataFiles.forEach((template) => {
   let tde = JSON.parse(test.getTestFile(template+"-TDE.tdej"));
   let desiredSchemaName = tde.template.rows[0].schemaName;
   let desiredViewName = tde.template.rows[0].viewName;
+  desiredViewName = desiredViewName.slice(0, -1); // Singular view name.
 
   let createdTypeAttributes = [];
   let createdDefinitions = createdAst.definitions;
@@ -53,7 +54,7 @@ dataFiles.forEach((template) => {
 
 
   assertions.push(
-    test.assertEqual(createdTypeAttributes, desiredTypeAttributes, "Implicit " + template +
+    test.assertTrue(createdTypeAttributes.includes(desiredTypeAttributes), "Implicit " + template +
         " schema is not containing desired data types.")
   );
 

@@ -13,24 +13,31 @@ let createdSchema = createImplicitSchema();
 let createdSchemaString = JSON.stringify(createdSchema);
 xdmp.log("Actual Result of createdSchema =>\n" + createdSchema, "info");
 
-let graphqlSchemaTypes = ["graphql_Humans", "graphql_Cars", "graphql_Laptops", "graphql_Houses", "graphql_Rooms", "graphql_Drinks"];
+let graphqlSchemaTypes = ["graphql_Human", "graphql_Car", "graphql_Laptop", "graphql_House", "graphql_Room", "graphql_Drink"];
 graphqlSchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes("type " + type + " {"), "Implicit schema is not containing desired " + type + " type")
   );
 });
 
-let primarySchemaTypes = ["primary_names"];
+let primarySchemaTypes = ["primary_name"];
 primarySchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes("type " + type + " {"), "Implicit schema is not containing desired " + type + " type")
   );
 });
 
-let secondarySchemaTypes = ["secondary_names"];
+let secondarySchemaTypes = ["secondary_name"];
 secondarySchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes("type " + type + " {"), "Implicit schema is not containing desired " + type + " type")
+  );
+});
+
+let query = ["Query"];
+query.forEach((type) => {
+  assertions.push(
+    test.assertTrue(createdSchemaString.includes("type " + type + " {"), "Implicit schema is not containing desired " + type + " type")
   );
 });
 

@@ -11,10 +11,10 @@ let createdSchema = createImplicitSchema();
 let createdSchemaString = JSON.stringify(createdSchema);
 xdmp.log("Actual Result of createdSchema =>\n" + createdSchema, "info");
 
-let graphqlSchemaTypes = ["graphql_Cars", "graphqlConflict_Cars"];
+let graphqlSchemaTypes = ["graphql_Car", "graphqlConflict_Car"];
 graphqlSchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes("type " + type + " {"), "Implicit schema is not containing desired " + type + " type")
   );
 });
 

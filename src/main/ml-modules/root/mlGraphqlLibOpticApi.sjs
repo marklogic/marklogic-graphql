@@ -103,14 +103,11 @@ function createAllTypesArray () {
   return output;
 }
 
-function createImplicitSchema () {
-
-  let typesArray = createAllTypesArray();
-
+function typeDefinition(typesArray) {
   let schema = ``;
 
   typesArray.forEach(function(item) {
-    schema = schema + "type " + item.typeName + " {\n";
+    schema = schema + "type " + item.typeName.slice(0, -1) + " {\n";
 
     item.fields.forEach(function(field) {
       schema = schema + "  " + field + "\n";
@@ -118,6 +115,30 @@ function createImplicitSchema () {
     });
     schema = schema + "}\n\n";
   });
+
+  return schema;
+}
+
+function queryDefinition(typesArray) {
+  let schema = ``;
+
+  schema = schema + "type Query {\n";
+
+  typesArray.forEach(function(item) {
+    schema = schema + "  " + item.typeName + ": [" + item.typeName.slice(0, -1) + "]\n";
+  });
+
+  schema = schema + "}\n";
+
+  return schema;
+}
+
+function createImplicitSchema () {
+
+  let typesArray = createAllTypesArray();
+
+  let schema = typeDefinition(typesArray);
+  schema = schema + queryDefinition(typesArray);
 
   return schema;
 }
