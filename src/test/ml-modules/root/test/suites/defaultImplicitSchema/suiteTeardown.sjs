@@ -20,18 +20,18 @@ function deleteDocumentInOtherDatabaseFunction(uri) {
 
 const dataFiles = ["humans", "cars", "carsConflict", "laptops", "houses", "rooms", "drinks"];
 // Delete the TDE templates from the schemas database
-dataFiles.forEach(function(template) {
-  let testInvoke = deleteDocumentInOtherDatabaseFunction("/templates/" + template + "-TDE.tdej");
+dataFiles.forEach(template => {
+  const testInvoke = deleteDocumentInOtherDatabaseFunction(`/templates/${template}-TDE.tdej`);
   xdmp.invokeFunction(
     testInvoke.delete,
     {database: xdmp.schemaDatabase()}
   );
 
-  let document = "/" + template + ".xml";
+  const document = `/${template}.xml`;
   xdmp.documentDelete(document);
 });
 
-let testInvoke = deleteDocumentInOtherDatabaseFunction("/graphql/implicitSchema.sdl");
+const testInvoke = deleteDocumentInOtherDatabaseFunction("/graphql/implicitSchema.sdl");
 xdmp.invokeFunction(
   testInvoke.delete,
   {database: xdmp.schemaDatabase()}
@@ -41,7 +41,7 @@ removeSchemasIfTheyExist();
 
 function removeSchemasIfTheyExist() {
   const schemas = view.schemas().toArray();
-  schemas.forEach(function(schema) {
+  schemas.forEach(schema => {
     if (fn.exists(schema.xpath("./view:schema-name[text() = 'primary']", {"view": "http://marklogic.com/xdmp/view"}))) {
       view.remove("primary", "Names");
     }

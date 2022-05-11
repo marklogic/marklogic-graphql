@@ -47,11 +47,9 @@ function getAllViewsNotInSysSchema() {
   const sqlQuery = "select table, name, type, schema from sys_columns";
   let viewImplicitTypes = null;
 
-  let result = null;
-
   viewImplicitTypes = op.fromSQL(sqlQuery);
   viewImplicitTypes = viewImplicitTypes.where(op.not(op.eq(op.col("schema"), "sys")));
-  result = viewImplicitTypes.result();
+  const result = viewImplicitTypes.result();
 
   return result.toArray();
 }
@@ -73,7 +71,7 @@ function createMapDataTypes () {
 function createAllTypesArray () {
 
   const mapDataTypes = createMapDataTypes();
-  let allViews = getAllViewsNotInSysSchema();
+  const allViews = getAllViewsNotInSysSchema();
 
   let allTypes = [];
 
@@ -87,8 +85,8 @@ function createAllTypesArray () {
 
   let output = [];
 
-  allTypes.forEach(function(item) {
-    let existing = output.filter(function(v) {
+  allTypes.forEach(item => {
+    const existing = output.filter(function(v) {
       return v.typeName === item.typeName;
     });
     if (existing.length) {
@@ -103,21 +101,43 @@ function createAllTypesArray () {
   return output;
 }
 
-function createImplicitSchema () {
-
-  let typesArray = createAllTypesArray();
-
+function typeDefinition(typesArray) {
   let schema = ``;
 
   typesArray.forEach(function(item) {
-    schema = schema + "type " + item.typeName + " {\n";
+    const singularTypeName = item.typeName.slice(0, -1);
+    schema += `type ${singularTypeName} {\n`;
 
     item.fields.forEach(function(field) {
-      schema = schema + "  " + field + "\n";
+      schema += `  ${field}\n`;
 
     });
-    schema = schema + "}\n\n";
+    schema += `}\n\n`;
   });
+
+  return schema;
+}
+
+function queryDefinition(typesArray) {
+
+  let schema = `type Query {\n`;
+
+  typesArray.forEach(item => {
+    const singularTypeName = item.typeName.slice(0, -1);
+    schema += `  ${item.typeName}: [${singularTypeName}]\n`;
+  });
+
+  schema += `}\n`;
+
+  return schema;
+}
+
+function createImplicitSchema () {
+
+  const typesArray = createAllTypesArray();
+
+  let schema = typeDefinition(typesArray);
+  schema += queryDefinition(typesArray);
 
   return schema;
 }
@@ -127,11 +147,11 @@ function storeImplicitSchema () {
   let result = createImplicitSchema();
 
   const config = admin.getConfiguration();
-  let schemaDatabaseId = admin.databaseGetSchemaDatabase(config, xdmp.database());
+  const schemaDatabaseId = admin.databaseGetSchemaDatabase(config, xdmp.database());
 
-  let javascriptString = "declareUpdate(); var textNode = new NodeBuilder(); " +
-      "textNode.addText(" + JSON.stringify(result)+ "); textNode = textNode.toNode(); " +
-      "xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);";
+  const javascriptString = `declareUpdate(); var textNode = new NodeBuilder(); 
+       textNode.addText(${JSON.stringify(result)}); textNode = textNode.toNode(); 
+       xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);`;
 
   xdmp.eval(javascriptString,  null,
     {
