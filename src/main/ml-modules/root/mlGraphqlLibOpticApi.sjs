@@ -167,7 +167,7 @@ function transformASTIntoArrayObject(graphQlQueryStr) {
 
   let astObject = transformGraphqlIntoASTPlan(graphQlQueryStr);
 
-  if (astObject.queryDocumentAst.kind === "Document") {
+  if ((astObject.errors.length === 0) && (astObject.queryDocumentAst.kind === "Document")) {
     astObject.queryDocumentAst.definitions.forEach(element => {
 
       if (element.operation === "query") {
@@ -179,18 +179,18 @@ function transformASTIntoArrayObject(graphQlQueryStr) {
       } else if (element.operation === "subscription") {
         subscriptionsArray.push(element);
       }
-    })
+    });
   }
 
   return buildArrayObject(queriesArray, mutationsArray, subscriptionsArray);
 }
 
 function buildArrayObject(queriesArray, mutationsArray, subscriptionsArray) {
-  return{
+  return {
     "queries": queriesArray,
     "mutations": mutationsArray,
     "subscriptions": subscriptionsArray,
-  }
+  };
 }
 
 
