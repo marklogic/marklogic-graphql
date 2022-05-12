@@ -44,16 +44,16 @@ arrayObject = transformASTIntoArrayObject(multipleGraphQlRequestString);
 // Then an AST subtree is returned
 assertions.push(
 
-  test.assertTrue(deepEqual("query", arrayObject["queries"][0].operation),
+  test.assertEqual("query", arrayObject["queries"][0].operation,
     "The resulting array object does not match the expected results."),
 
-  test.assertTrue(deepEqual("query", arrayObject["queries"][1].operation),
+  test.assertEqual("query", arrayObject["queries"][1].operation,
     "The resulting array object does not match the expected results."),
 
-  test.assertTrue(deepEqual("mutation", arrayObject["mutations"][0].operation),
+  test.assertEqual("mutation", arrayObject["mutations"][0].operation,
     "The resulting array object does not match the expected results."),
 
-  test.assertTrue(deepEqual("subscription", arrayObject["subscriptions"][0].operation),
+  test.assertEqual("subscription", arrayObject["subscriptions"][0].operation,
     "The resulting array object does not match the expected results.")
 );
 
@@ -73,7 +73,7 @@ arrayObject = transformASTIntoArrayObject(multipleGraphQlRequestStringWithSomeIn
 // Then an AST subtree is returned
 assertions.push(
 
-  test.assertTrue(deepEqual([], arrayObject["queries"]),
+  test.assertEqual([], arrayObject["queries"],
     "The resulting array object does not match the expected results.")
 );
 assertions;
