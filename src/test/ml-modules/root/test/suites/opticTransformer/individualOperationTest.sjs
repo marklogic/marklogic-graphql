@@ -2,7 +2,6 @@
 
 const test = require("/test/test-helper.xqy");
 const {transformASTIntoArrayObject} = require("/mlGraphqlLibOpticApi");
-const {deepEqual} = require("/testHelpers");
 const assertions = [];
 
 
@@ -18,13 +17,13 @@ let arrayObject = transformASTIntoArrayObject(simpleGraphQlQueryString);
 // Then an AST subtree is returned
 assertions.push(
 
-  test.assertTrue(deepEqual("query", arrayObject["queries"][0].operation),
+  test.assertEqual("query", arrayObject["queries"][0].operation,
     "The resulting array object does not match the expected results."),
 
-  test.assertTrue(deepEqual([], arrayObject["mutations"]),
+  test.assertEqual([], arrayObject["mutations"],
     "The resulting array object does not match the expected results."),
 
-  test.assertTrue(deepEqual([], arrayObject["subscriptions"]),
+  test.assertEqual([], arrayObject["subscriptions"],
     "The resulting array object does not match the expected results.")
 );
 
