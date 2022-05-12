@@ -16,7 +16,7 @@ const mapDataTypes = createMapDataTypes();
 const dataFiles = ["humans", "cars", "carsConflict", "laptops", "houses", "rooms", "drinks"];
 
 dataFiles.forEach((template) => {
-  const tde = JSON.parse(test.getTestFile(template+"-TDE.tdej"));
+  const tde = JSON.parse(test.getTestFile(`${template}-TDE.tdej`));
   const desiredSchemaName = tde.template.rows[0].schemaName;
   let desiredViewName = tde.template.rows[0].viewName;
   desiredViewName = desiredViewName.slice(0, -1); // Singular view name.
@@ -24,7 +24,7 @@ dataFiles.forEach((template) => {
   let createdTypeAttributes = [];
   const createdDefinitions = createdAst.definitions;
   createdDefinitions.forEach((element) => {
-    if (element.name.value === desiredSchemaName + "_" + desiredViewName) {
+    if (element.name.value === `${desiredSchemaName}_${desiredViewName}`) {
       const {fields} = element;
       fields.forEach((attribute) => {
         const createdAttributeName = attribute.name.value;
