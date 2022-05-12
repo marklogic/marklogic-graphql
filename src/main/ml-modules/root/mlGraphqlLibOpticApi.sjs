@@ -159,9 +159,45 @@ function storeImplicitSchema () {
     });
 }
 
+function transformASTIntoArrayObject(graphQlQueryStr) {
+
+  let queriesArray= [];
+  let mutationsArray= [];
+  let subscriptionsArray= [];
+
+  let astObject = transformGraphqlIntoASTPlan(graphQlQueryStr);
+
+  if ((astObject.errors.length === 0) && (astObject.queryDocumentAst.kind === "Document")) {
+    astObject.queryDocumentAst.definitions.forEach(element => {
+
+      if (element.operation === "query") {
+        queriesArray.push(element);
+
+      } else if (element.operation === "mutation") {
+        mutationsArray.push(element);
+
+      } else if (element.operation === "subscription") {
+        subscriptionsArray.push(element);
+      }
+    });
+  }
+
+  return buildArrayObject(queriesArray, mutationsArray, subscriptionsArray);
+}
+
+function buildArrayObject(queriesArray, mutationsArray, subscriptionsArray) {
+  return {
+    "queries": queriesArray,
+    "mutations": mutationsArray,
+    "subscriptions": subscriptionsArray,
+  };
+}
+
+
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
 exports.transformGraphqlIntoASTPlan = transformGraphqlIntoASTPlan;
 exports.executeOpticPlan = executeOpticPlan;
 exports.createImplicitSchema = createImplicitSchema;
 exports.storeImplicitSchema = storeImplicitSchema;
 exports.createMapDataTypes = createMapDataTypes;
+exports.transformASTIntoArrayObject = transformASTIntoArrayObject;
