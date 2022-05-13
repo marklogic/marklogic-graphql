@@ -39,8 +39,8 @@ xdmp.log(`createdQueryAttributes =>\n${createdQueryAttributes}`, "info");
 
 let desiredQueryAttributes = [];
 dataFiles.forEach((template) => {
-  const tde = JSON.parse(test.getTestFile(template+"-TDE.tdej"));
-  const desiredAttributeName = tde.template.rows[0].schemaName + "_" + tde.template.rows[0].viewName;
+  const tde = JSON.parse(test.getTestFile(`${template}-TDE.tdej`));
+  const desiredAttributeName = `${tde.template.rows[0].schemaName}_${tde.template.rows[0].viewName}`;
   const desiredAttributeDataType = desiredAttributeName.slice(0, -1) ;
 
   let currentDesiredQueryAttributes = {

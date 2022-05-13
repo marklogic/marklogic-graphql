@@ -104,30 +104,44 @@ function createAllTypesArray () {
 function typeDefinition(typesArray) {
   let schema = ``;
 
-  typesArray.forEach(function(item) {
+  typesArray.forEach(item => {
     const singularTypeName = item.typeName.slice(0, -1);
     schema += `type ${singularTypeName} {\n`;
 
-    item.fields.forEach(function(field) {
+    item.fields.forEach(field => {
       schema += `  ${field}\n`;
 
     });
-    schema += `}\n\n`;
+    schema += "}\n\n";
   });
 
   return schema;
 }
 
+function addArgumentDefinition(fields) {
+  let schema = ``;
+
+  fields.forEach((field, key, array) => {
+    if (key === array.length - 1) {
+      schema += `${field}`;
+    } else {
+      schema += `${field}, `;
+    }
+  });
+  return schema;
+}
 function queryDefinition(typesArray) {
 
-  let schema = `type Query {\n`;
+  let schema = "type Query {\n";
 
   typesArray.forEach(item => {
     const singularTypeName = item.typeName.slice(0, -1);
-    schema += `  ${item.typeName}: [${singularTypeName}]\n`;
+    const {fields} = item;
+    const argumentDefinition = addArgumentDefinition(fields);
+    schema += `  ${item.typeName}(${argumentDefinition}): [${singularTypeName}]\n`;
   });
 
-  schema += `}\n`;
+  schema += "}\n";
 
   return schema;
 }
