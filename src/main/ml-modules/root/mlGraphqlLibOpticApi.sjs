@@ -131,7 +131,7 @@ function storeImplicitSchema () {
 
   let javascriptString = "declareUpdate(); var textNode = new NodeBuilder(); " +
       "textNode.addText(" + JSON.stringify(result)+ "); textNode = textNode.toNode(); " +
-      "xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);";//fn exists
+      "xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);";
 
   xdmp.eval(javascriptString,  null,
     {
@@ -156,8 +156,8 @@ function checkConfigFile () {
     xdmp.documentInsert('${configURI}', textNode)
   }`;
   xdmp.eval(javascriptString,  null, {"database": schemaDatabaseId});
-
 }
+
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
 exports.transformGraphqlIntoASTPlan = transformGraphqlIntoASTPlan;
 exports.executeOpticPlan = executeOpticPlan;

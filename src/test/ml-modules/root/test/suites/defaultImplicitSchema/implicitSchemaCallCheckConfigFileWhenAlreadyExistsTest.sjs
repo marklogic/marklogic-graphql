@@ -51,7 +51,6 @@ assertions.push(
 
 const configFileAfterChecker = getConfigFileAsJSON();
 
-
 Object.keys(initialConfigFile).map(key => {
   assertions.push(
     test.assertEqual(initialConfigFile[key], configFileAfterChecker[key], `The config file should be the same key = ${key}`)
