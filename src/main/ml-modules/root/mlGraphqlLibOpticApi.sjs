@@ -8,8 +8,9 @@ this.process = {env: {NODE_ENV: "development"}};
 const {parse} = require("/graphql/language/parser");
 const op = require("/MarkLogic/optic.sjs");
 const admin = require("/MarkLogic/admin.xqy");
-
 let errors = [];
+const schemaUri = "implicit";
+const queryDepthLimit = 5;
 
 function transformGraphqlIntoOpticPlan(graphQlQueryStr) {
   return graphQlQueryStr;
@@ -66,12 +67,11 @@ function createMapDataTypes () {
   mapDataTypes.set("string", "String");
   mapDataTypes.set("boolean", "Boolean");
   mapDataTypes.set("id", "ID");
-
   return mapDataTypes;
+
 }
 
 function createAllTypesArray () {
-
   const mapDataTypes = createMapDataTypes();
   let allViews = getAllViewsNotInSysSchema();
 
@@ -131,17 +131,37 @@ function storeImplicitSchema () {
 
   let javascriptString = "declareUpdate(); var textNode = new NodeBuilder(); " +
       "textNode.addText(" + JSON.stringify(result)+ "); textNode = textNode.toNode(); " +
-      "xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);";
+      "xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);";//fn exists
 
   xdmp.eval(javascriptString,  null,
     {
       "database": schemaDatabaseId
     });
+
 }
 
+function checkConfigFile () {
+  const configURI = "/graphql/config.json";
+
+  const config = admin.getConfiguration();
+  const schemaDatabaseId = admin.databaseGetSchemaDatabase(config, xdmp.database());
+  const javascriptString = `
+  declareUpdate()
+  const documentExists = fn.exists(fn.doc('${configURI}'))
+  const defaultProps = { "schemaUri": "${schemaUri}", "queryDepthLimit": ${queryDepthLimit} };
+  if(!documentExists) {
+    let textNode = new NodeBuilder();
+    textNode.addText(JSON.stringify(defaultProps)); 
+    textNode = textNode.toNode();
+    xdmp.documentInsert('${configURI}', textNode)
+  }`;
+  xdmp.eval(javascriptString,  null, {"database": schemaDatabaseId});
+
+}
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
 exports.transformGraphqlIntoASTPlan = transformGraphqlIntoASTPlan;
 exports.executeOpticPlan = executeOpticPlan;
 exports.createImplicitSchema = createImplicitSchema;
 exports.storeImplicitSchema = storeImplicitSchema;
 exports.createMapDataTypes = createMapDataTypes;
+exports.checkConfigFile = checkConfigFile;
