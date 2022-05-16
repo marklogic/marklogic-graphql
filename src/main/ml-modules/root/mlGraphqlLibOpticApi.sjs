@@ -207,6 +207,46 @@ function buildArrayObject(queriesArray, mutationsArray, subscriptionsArray) {
   };
 }
 
+function getQueryTypeDefinitions(parsedSchema) {
+  const queryTypeDefinitions = [];
+  parsedSchema.definitions.forEach(typeDefinition => {
+    if (typeDefinition.name.value === "Query") {
+      queryTypeDefinitions.push(typeDefinition);
+    }
+  });
+  return queryTypeDefinitions;
+}
+
+function getQuerySchemaAst(queryViewName) {
+  let targetQueryDefinition = null;
+  const schemaString = createImplicitSchema();
+  const parsedSchema = parse(schemaString);
+  const queryTypeDefinitions = getQueryTypeDefinitions(parsedSchema);
+  queryTypeDefinitions.forEach(queryTypeDefinition => {
+    queryTypeDefinition.fields.forEach(queryDefinition => {
+      if (queryDefinition.name.value === queryViewName) {
+        targetQueryDefinition = queryDefinition;
+      }
+    });
+  });
+  return targetQueryDefinition;
+}
+
+function validateQuery(astQueryObject) {
+  const validationResults = [];
+  const queryName = astQueryObject.name.value;
+  const queryViewName = astQueryObject.selectionSet.selections[0].name.value;
+  const querySchemaAst = getQuerySchemaAst(queryViewName);
+  if (querySchemaAst === null) {
+    const errorMsg = `${queryName}: View not found:${queryViewName}`;
+    xdmp.log(`errorMsg: ${errorMsg}`);
+    validationResults.push(errorMsg);
+  } else {
+    // continue validating the query
+  }
+  return validationResults;
+}
+
 
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
 exports.transformGraphqlIntoASTPlan = transformGraphqlIntoASTPlan;
@@ -215,3 +255,4 @@ exports.createImplicitSchema = createImplicitSchema;
 exports.storeImplicitSchema = storeImplicitSchema;
 exports.createMapDataTypes = createMapDataTypes;
 exports.transformASTIntoArrayObject = transformASTIntoArrayObject;
+exports.validateQuery = validateQuery;
