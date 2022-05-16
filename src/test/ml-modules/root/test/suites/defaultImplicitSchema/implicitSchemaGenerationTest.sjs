@@ -9,28 +9,35 @@ const assertions = [];
 // Given default data store in the database though test setup
 // When implicit schema is created by the user
 // Then test if implicit schema is containing desired information.
-let createdSchema = createImplicitSchema();
-let createdSchemaString = JSON.stringify(createdSchema);
-xdmp.log("Actual Result of createdSchema =>\n" + createdSchema, "info");
+const createdSchema = createImplicitSchema();
+const createdSchemaString = JSON.stringify(createdSchema);
+xdmp.log(`Actual Result of createdSchema =>\n${createdSchema}`, "info");
 
-let graphqlSchemaTypes = ["graphql_Humans", "graphql_Cars", "graphql_Laptops", "graphql_Houses", "graphql_Rooms", "graphql_Drinks"];
+const graphqlSchemaTypes = ["graphql_Human", "graphql_Car", "graphql_Laptop", "graphql_House", "graphql_Room", "graphql_Drink"];
 graphqlSchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes(`type ${type} {`), `Implicit schema is not containing desired ${type} type`)
   );
 });
 
-let primarySchemaTypes = ["primary_names"];
+const primarySchemaTypes = ["primary_name"];
 primarySchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes(`type ${type} {`), `Implicit schema is not containing desired ${type} type`)
   );
 });
 
-let secondarySchemaTypes = ["secondary_names"];
+const secondarySchemaTypes = ["secondary_name"];
 secondarySchemaTypes.forEach((type) => {
   assertions.push(
-    test.assertTrue(createdSchemaString.includes(type), "Implicit schema is not containing desired " + type + " type")
+    test.assertTrue(createdSchemaString.includes(`type ${type} {`), `Implicit schema is not containing desired ${type} type`)
+  );
+});
+
+const query = ["Query"];
+query.forEach((type) => {
+  assertions.push(
+    test.assertTrue(createdSchemaString.includes(`type ${type} {`), `Implicit schema is not containing desired ${type} type`)
   );
 });
 

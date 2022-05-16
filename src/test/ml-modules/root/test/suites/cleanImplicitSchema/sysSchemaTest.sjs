@@ -7,9 +7,9 @@ const assertions = [];
 // Given no data added to the database
 // When implicit schema is created by the user
 // Then test if implicit schema is not containing any sys, primary or secondary view.
-let createdSchema = createImplicitSchema();
-let createdSchemaString = JSON.stringify(createdSchema);
-xdmp.log("Actual Result of createdSchema =>\n" + createdSchema, "info");
+const createdSchema = createImplicitSchema();
+const createdSchemaString = JSON.stringify(createdSchema);
+xdmp.log(`Actual Result of createdSchema =>\n${createdSchema}`, "info");
 
 assertions.push(
   test.assertFalse(createdSchemaString.includes("sys"), "Implicit schema is containing sys view"),

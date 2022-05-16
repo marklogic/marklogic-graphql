@@ -9,25 +9,26 @@ const assertions = [];
 // Given default data store in the database though test setup
 // When implicit schema is created by the user
 // Then test if implicit schema is containing the right data types for each argument part of each generated type.
-let createdSchema = createImplicitSchema();
-let createdAst = parse(createdSchema);
+const createdSchema = createImplicitSchema();
+const createdAst = parse(createdSchema);
 
 const mapDataTypes = createMapDataTypes();
 const dataFiles = ["humans", "cars", "carsConflict", "laptops", "houses", "rooms", "drinks"];
 
 dataFiles.forEach((template) => {
-  let tde = JSON.parse(test.getTestFile(template+"-TDE.tdej"));
-  let desiredSchemaName = tde.template.rows[0].schemaName;
+  const tde = JSON.parse(test.getTestFile(`${template}-TDE.tdej`));
+  const desiredSchemaName = tde.template.rows[0].schemaName;
   let desiredViewName = tde.template.rows[0].viewName;
+  desiredViewName = desiredViewName.slice(0, -1); // Singular view name.
 
   let createdTypeAttributes = [];
-  let createdDefinitions = createdAst.definitions;
+  const createdDefinitions = createdAst.definitions;
   createdDefinitions.forEach((element) => {
-    if (element.name.value === desiredSchemaName + "_" + desiredViewName) {
-      let fields = element.fields;
+    if (element.name.value === `${desiredSchemaName}_${desiredViewName}`) {
+      const {fields} = element;
       fields.forEach((attribute) => {
-        let createdAttributeName = attribute.name.value;
-        let createdAttributeDataType = attribute.type.name.value;
+        const createdAttributeName = attribute.name.value;
+        const createdAttributeDataType = attribute.type.name.value;
         createdTypeAttributes.push({
           "name": createdAttributeName,
           "dataType": createdAttributeDataType
@@ -36,25 +37,25 @@ dataFiles.forEach((template) => {
     }
   });
   createdTypeAttributes = JSON.stringify(createdTypeAttributes);
-  xdmp.log("createdTypeAttributes for " + template + "=>\n" + createdTypeAttributes, "info");
+  xdmp.log(`createdTypeAttributes for ${template}=>\n${createdTypeAttributes}`, "info");
 
   let desiredTypeAttributes = [];
-  let columns = tde.template.rows[0].columns;
+  const columns = tde.template.rows[0].columns;
   columns.forEach((element) => {
-    let desiredAttributeName = element.name;
-    let desiredAttributeDataType = element.scalarType;
+    const desiredAttributeName = element.name;
+    const desiredAttributeDataType = element.scalarType;
     desiredTypeAttributes.push({
       "name": desiredAttributeName,
       "dataType": mapDataTypes.get(desiredAttributeDataType)
     });
   });
   desiredTypeAttributes = JSON.stringify(desiredTypeAttributes);
-  xdmp.log("desiredTypeAttributes " + template + "=>\n" + desiredTypeAttributes, "info");
+  xdmp.log(`desiredTypeAttributes ${template}=>\n${desiredTypeAttributes}`, "info");
 
 
   assertions.push(
-    test.assertEqual(createdTypeAttributes, desiredTypeAttributes, "Implicit " + template +
-        " schema is not containing desired data types.")
+    test.assertTrue(createdTypeAttributes.includes(desiredTypeAttributes), `Implicit ${template} schema 
+        is not containing desired data types.`)
   );
 
 });

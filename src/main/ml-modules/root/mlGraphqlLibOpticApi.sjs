@@ -48,11 +48,9 @@ function getAllViewsNotInSysSchema() {
   const sqlQuery = "select table, name, type, schema from sys_columns";
   let viewImplicitTypes = null;
 
-  let result = null;
-
   viewImplicitTypes = op.fromSQL(sqlQuery);
   viewImplicitTypes = viewImplicitTypes.where(op.not(op.eq(op.col("schema"), "sys")));
-  result = viewImplicitTypes.result();
+  const result = viewImplicitTypes.result();
 
   return result.toArray();
 }
@@ -73,7 +71,7 @@ function createMapDataTypes () {
 
 function createAllTypesArray () {
   const mapDataTypes = createMapDataTypes();
-  let allViews = getAllViewsNotInSysSchema();
+  const allViews = getAllViewsNotInSysSchema();
 
   let allTypes = [];
 
@@ -87,8 +85,8 @@ function createAllTypesArray () {
 
   let output = [];
 
-  allTypes.forEach(function(item) {
-    let existing = output.filter(function(v) {
+  allTypes.forEach(item => {
+    const existing = output.filter(function(v) {
       return v.typeName === item.typeName;
     });
     if (existing.length) {
@@ -103,21 +101,57 @@ function createAllTypesArray () {
   return output;
 }
 
-function createImplicitSchema () {
-
-  let typesArray = createAllTypesArray();
-
+function typeDefinition(typesArray) {
   let schema = ``;
 
-  typesArray.forEach(function(item) {
-    schema = schema + "type " + item.typeName + " {\n";
+  typesArray.forEach(item => {
+    const singularTypeName = item.typeName.slice(0, -1);
+    schema += `type ${singularTypeName} {\n`;
 
-    item.fields.forEach(function(field) {
-      schema = schema + "  " + field + "\n";
+    item.fields.forEach(field => {
+      schema += `  ${field}\n`;
 
     });
-    schema = schema + "}\n\n";
+    schema += "}\n\n";
   });
+
+  return schema;
+}
+
+function addArgumentDefinition(fields) {
+  let schema = ``;
+
+  fields.forEach((field, key, array) => {
+    if (key === array.length - 1) {
+      schema += `${field}`;
+    } else {
+      schema += `${field}, `;
+    }
+  });
+  return schema;
+}
+function queryDefinition(typesArray) {
+
+  let schema = "type Query {\n";
+
+  typesArray.forEach(item => {
+    const singularTypeName = item.typeName.slice(0, -1);
+    const {fields} = item;
+    const argumentDefinition = addArgumentDefinition(fields);
+    schema += `  ${item.typeName}(${argumentDefinition}): [${singularTypeName}]\n`;
+  });
+
+  schema += "}\n";
+
+  return schema;
+}
+
+function createImplicitSchema () {
+
+  const typesArray = createAllTypesArray();
+
+  let schema = typeDefinition(typesArray);
+  schema += queryDefinition(typesArray);
 
   return schema;
 }
@@ -127,11 +161,11 @@ function storeImplicitSchema () {
   let result = createImplicitSchema();
 
   const config = admin.getConfiguration();
-  let schemaDatabaseId = admin.databaseGetSchemaDatabase(config, xdmp.database());
+  const schemaDatabaseId = admin.databaseGetSchemaDatabase(config, xdmp.database());
 
-  let javascriptString = "declareUpdate(); var textNode = new NodeBuilder(); " +
-      "textNode.addText(" + JSON.stringify(result)+ "); textNode = textNode.toNode(); " +
-      "xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);";
+  const javascriptString = `declareUpdate(); var textNode = new NodeBuilder(); 
+       textNode.addText(${JSON.stringify(result)}); textNode = textNode.toNode(); 
+       xdmp.documentInsert('/graphql/implicitSchema.sdl',textNode);`;
 
   xdmp.eval(javascriptString,  null,
     {
@@ -158,6 +192,41 @@ function checkConfigFile () {
   xdmp.eval(javascriptString,  null, {"database": schemaDatabaseId});
 }
 
+function transformASTIntoArrayObject(graphQlQueryStr) {
+
+  let queriesArray= [];
+  let mutationsArray= [];
+  let subscriptionsArray= [];
+
+  let astObject = transformGraphqlIntoASTPlan(graphQlQueryStr);
+
+  if ((astObject.errors.length === 0) && (astObject.queryDocumentAst.kind === "Document")) {
+    astObject.queryDocumentAst.definitions.forEach(element => {
+
+      if (element.operation === "query") {
+        queriesArray.push(element);
+
+      } else if (element.operation === "mutation") {
+        mutationsArray.push(element);
+
+      } else if (element.operation === "subscription") {
+        subscriptionsArray.push(element);
+      }
+    });
+  }
+
+  return buildArrayObject(queriesArray, mutationsArray, subscriptionsArray);
+}
+
+function buildArrayObject(queriesArray, mutationsArray, subscriptionsArray) {
+  return {
+    "queries": queriesArray,
+    "mutations": mutationsArray,
+    "subscriptions": subscriptionsArray,
+  };
+}
+
+
 exports.transformGraphqlIntoOpticPlan = transformGraphqlIntoOpticPlan;
 exports.transformGraphqlIntoASTPlan = transformGraphqlIntoASTPlan;
 exports.executeOpticPlan = executeOpticPlan;
@@ -165,3 +234,4 @@ exports.createImplicitSchema = createImplicitSchema;
 exports.storeImplicitSchema = storeImplicitSchema;
 exports.createMapDataTypes = createMapDataTypes;
 exports.checkConfigFile = checkConfigFile;
+exports.transformASTIntoArrayObject = transformASTIntoArrayObject;
