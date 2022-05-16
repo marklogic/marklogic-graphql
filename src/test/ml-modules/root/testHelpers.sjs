@@ -1,7 +1,7 @@
 // Based on https://dmitripavlutin.com/how-to-compare-objects-in-javascript/
 // Under the CC license (https://creativecommons.org/licenses/by/4.0/)
 // Customized and extended specifically to support testing the return values from mlGraphqlLibOpticApi.sjs
-
+/* global declareUpdate */ // For ESLint
 function deepArrayEqual(array1, array2, ignoreKeys) {
   if (array1.length !== array2.length) {
     return false;
@@ -66,5 +66,17 @@ function deepEqual(object1, object2, ignoreKeys = []) {
 function isObject(object) {
   return object !== null && typeof object === "object";
 }
+function deleteDocumentInOtherDatabaseFunction(uri) {
+  return {
+    setUri: function setUri(_uri) { uri = _uri; },
+    delete: function docDelete() {
+      declareUpdate();
+      if (fn.exists(fn.doc(uri))) {
+        xdmp.documentDelete(uri);
+      }
+    }
+  };
+}
 
 exports.deepEqual = deepEqual;
+exports.deleteDocumentInOtherDatabaseFunction = deleteDocumentInOtherDatabaseFunction;
